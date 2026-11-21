@@ -1,0 +1,114 @@
+{
+  "description": "Step 02: Structural Columns (200x200, SOLID hatch), Exterior Walls (200mm), Balcony Parapet (100mm), and Interior Walls (100mm, ANSI31 hatch)",
+  "units": "mm",
+  "operations": [
+    {
+      "op": "create_layer",
+      "name": "COLUMN",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "COLUMN_HATCH",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "WALL_EXT",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "WALL_INT",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "WALL_HATCH",
+      "color": 8,
+      "linetype": "Continuous"
+    },
+
+    { "op": "draw_rectangle", "id": "col_A1", "layer": "COLUMN", "corner1": [-100, -100], "corner2": [100, 100] },
+    { "op": "draw_hatch", "id": "hatch_col_A1", "layer": "COLUMN_HATCH", "boundary_id": "col_A1", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_B1", "layer": "COLUMN", "corner1": [-100, 4100], "corner2": [100, 4300] },
+    { "op": "draw_hatch", "id": "hatch_col_B1", "layer": "COLUMN_HATCH", "boundary_id": "col_B1", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_A2", "layer": "COLUMN", "corner1": [4700, -100], "corner2": [4900, 100] },
+    { "op": "draw_hatch", "id": "hatch_col_A2", "layer": "COLUMN_HATCH", "boundary_id": "col_A2", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_B2", "layer": "COLUMN", "corner1": [4700, 4100], "corner2": [4900, 4300] },
+    { "op": "draw_hatch", "id": "hatch_col_B2", "layer": "COLUMN_HATCH", "boundary_id": "col_B2", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_A3", "layer": "COLUMN", "corner1": [9500, -100], "corner2": [9700, 100] },
+    { "op": "draw_hatch", "id": "hatch_col_A3", "layer": "COLUMN_HATCH", "boundary_id": "col_A3", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_B3", "layer": "COLUMN", "corner1": [9500, 4100], "corner2": [9700, 4300] },
+    { "op": "draw_hatch", "id": "hatch_col_B3", "layer": "COLUMN_HATCH", "boundary_id": "col_B3", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_A4", "layer": "COLUMN", "corner1": [12100, -100], "corner2": [12300, 100] },
+    { "op": "draw_hatch", "id": "hatch_col_A4", "layer": "COLUMN_HATCH", "boundary_id": "col_A4", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "col_B4", "layer": "COLUMN", "corner1": [12100, 4100], "corner2": [12300, 4300] },
+    { "op": "draw_hatch", "id": "hatch_col_B4", "layer": "COLUMN_HATCH", "boundary_id": "col_B4", "pattern": "SOLID", "scale": 1, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_A_1_2", "layer": "WALL_EXT", "corner1": [100, -100], "corner2": [4700, 100] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_A_1_2", "layer": "WALL_HATCH", "boundary_id": "wall_ext_A_1_2", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_A_2_3", "layer": "WALL_EXT", "corner1": [4900, -100], "corner2": [9500, 100] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_A_2_3", "layer": "WALL_HATCH", "boundary_id": "wall_ext_A_2_3", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_A_3_4", "layer": "WALL_EXT", "corner1": [9700, -100], "corner2": [12100, 100] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_A_3_4", "layer": "WALL_HATCH", "boundary_id": "wall_ext_A_3_4", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_B_1_2", "layer": "WALL_EXT", "corner1": [100, 4100], "corner2": [4700, 4300] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_B_1_2", "layer": "WALL_HATCH", "boundary_id": "wall_ext_B_1_2", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_B_2_3", "layer": "WALL_EXT", "corner1": [4900, 4100], "corner2": [9500, 4300] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_B_2_3", "layer": "WALL_HATCH", "boundary_id": "wall_ext_B_2_3", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_B_3_4", "layer": "WALL_EXT", "corner1": [9700, 4100], "corner2": [12100, 4300] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_B_3_4", "layer": "WALL_HATCH", "boundary_id": "wall_ext_B_3_4", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_4_AB", "layer": "WALL_EXT", "corner1": [12100, 100], "corner2": [12300, 4100] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_4_AB", "layer": "WALL_HATCH", "boundary_id": "wall_ext_4_AB", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_1_lower", "layer": "WALL_EXT", "corner1": [-100, 100], "corner2": [100, 1100] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_1_lower", "layer": "WALL_HATCH", "boundary_id": "wall_ext_1_lower", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_ext_1_upper", "layer": "WALL_EXT", "corner1": [-100, 2500], "corner2": [100, 4100] },
+    { "op": "draw_hatch", "id": "hatch_wall_ext_1_upper", "layer": "WALL_HATCH", "boundary_id": "wall_ext_1_upper", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "parapet_left", "layer": "WALL_EXT", "corner1": [-1450, -50], "corner2": [-1350, 4250] },
+    { "op": "draw_hatch", "id": "hatch_parapet_left", "layer": "WALL_HATCH", "boundary_id": "parapet_left", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "parapet_bottom", "layer": "WALL_EXT", "corner1": [-1350, -50], "corner2": [-100, 50] },
+    { "op": "draw_hatch", "id": "hatch_parapet_bottom", "layer": "WALL_HATCH", "boundary_id": "parapet_bottom", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "parapet_top", "layer": "WALL_EXT", "corner1": [-1350, 4150], "corner2": [-100, 4250] },
+    { "op": "draw_hatch", "id": "hatch_parapet_top", "layer": "WALL_HATCH", "boundary_id": "parapet_top", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_int_2", "layer": "WALL_INT", "corner1": [4750, 1000], "corner2": [4850, 4100] },
+    { "op": "draw_hatch", "id": "hatch_wall_int_2", "layer": "WALL_HATCH", "boundary_id": "wall_int_2", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_int_corr_1", "layer": "WALL_INT", "corner1": [4850, 1050], "corner2": [7200, 1150] },
+    { "op": "draw_hatch", "id": "hatch_wall_int_corr_1", "layer": "WALL_HATCH", "boundary_id": "wall_int_corr_1", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_int_corr_2", "layer": "WALL_INT", "corner1": [8000, 1050], "corner2": [8350, 1150] },
+    { "op": "draw_hatch", "id": "hatch_wall_int_corr_2", "layer": "WALL_HATCH", "boundary_id": "wall_int_corr_2", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_int_corr_3", "layer": "WALL_INT", "corner1": [9050, 1050], "corner2": [9550, 1150] },
+    { "op": "draw_hatch", "id": "hatch_wall_int_corr_3", "layer": "WALL_HATCH", "boundary_id": "wall_int_corr_3", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_int_wc2", "layer": "WALL_INT", "corner1": [8150, 1150], "corner2": [8250, 4100] },
+    { "op": "draw_hatch", "id": "hatch_wall_int_wc2", "layer": "WALL_HATCH", "boundary_id": "wall_int_wc2", "pattern": "ANSI31", "scale": 50, "angle": 0 },
+
+    { "op": "draw_rectangle", "id": "wall_int_3", "layer": "WALL_INT", "corner1": [9550, 1100], "corner2": [9650, 4100] },
+    { "op": "draw_hatch", "id": "hatch_wall_int_3", "layer": "WALL_HATCH", "boundary_id": "wall_int_3", "pattern": "ANSI31", "scale": 50, "angle": 0 }
+  ]
+}

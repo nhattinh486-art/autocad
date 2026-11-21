@@ -1,0 +1,371 @@
+{
+  "description": "Step 04: Furniture and fixtures (Balcony plant, Phong ngu 2, Phong ngu 1, WC 2)",
+  "units": "mm",
+  "operations": [
+    {
+      "op": "create_layer",
+      "name": "A-FURN",
+      "color": "4",
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-PLANT",
+      "color": "3",
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-SANITARY",
+      "color": "4",
+      "linetype": "Continuous"
+    },
+
+    {
+      "op": "draw_circle",
+      "comment": "Balcony decorative plant/tree outer canopy at top-left",
+      "layer": "A-PLANT",
+      "center": [-700, 3450],
+      "radius": 450
+    },
+    {
+      "op": "draw_circle",
+      "comment": "Balcony decorative plant/tree inner trunk/pot",
+      "layer": "A-PLANT",
+      "center": [-700, 3450],
+      "radius": 120
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-580, 3450],
+      "end": [-250, 3450]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-596, 3510],
+      "end": [-310, 3675]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-640, 3554],
+      "end": [-475, 3840]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-700, 3570],
+      "end": [-700, 3900]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-760, 3554],
+      "end": [-925, 3840]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-804, 3510],
+      "end": [-1090, 3675]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-820, 3450],
+      "end": [-1150, 3450]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-804, 3390],
+      "end": [-1090, 3225]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-760, 3346],
+      "end": [-925, 3060]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-700, 3330],
+      "end": [-700, 3000]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-640, 3346],
+      "end": [-475, 3060]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [-596, 3390],
+      "end": [-310, 3225]
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - Double bed frame against top wall (y=4100)",
+      "layer": "A-FURN",
+      "corner1": [1200, 2100],
+      "corner2": [2800, 4100]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - Bed headboard",
+      "layer": "A-FURN",
+      "corner1": [1200, 4020],
+      "corner2": [2800, 4100]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - Left pillow",
+      "layer": "A-FURN",
+      "corner1": [1300, 3550],
+      "corner2": [1950, 3980]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - Right pillow",
+      "layer": "A-FURN",
+      "corner1": [2050, 3550],
+      "corner2": [2700, 3980]
+    },
+    {
+      "op": "draw_line",
+      "comment": "Phong ngu 2 - Bed blanket fold line 1",
+      "layer": "A-FURN",
+      "start": [1200, 3300],
+      "end": [2800, 3300]
+    },
+    {
+      "op": "draw_line",
+      "comment": "Phong ngu 2 - Bed blanket fold line 2",
+      "layer": "A-FURN",
+      "start": [1200, 3150],
+      "end": [2800, 3150]
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - Wardrobe along right wall (x=4150..4750, y=1500..4100, clear of PN2 door)",
+      "layer": "A-FURN",
+      "corner1": [4150, 1500],
+      "corner2": [4750, 4100]
+    },
+    {
+      "op": "draw_line",
+      "comment": "Phong ngu 2 - Wardrobe hanging rod line",
+      "layer": "A-FURN",
+      "start": [4450, 1550],
+      "end": [4450, 4050]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [4150, 2000],
+      "end": [4750, 2000]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [4150, 2500],
+      "end": [4750, 2500]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [4150, 3000],
+      "end": [4750, 3000]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [4150, 3500],
+      "end": [4750, 3500]
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - TV console along bottom wall (y=100..500, clear of PN2 door)",
+      "layer": "A-FURN",
+      "corner1": [300, 100],
+      "corner2": [3300, 500]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 2 - TV screen on console",
+      "layer": "A-FURN",
+      "corner1": [1100, 150],
+      "corner2": [2500, 220]
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 1 - Double bed frame against top wall (y=4100)",
+      "layer": "A-FURN",
+      "corner1": [5300, 2200],
+      "corner2": [6900, 4100]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 1 - Bed headboard",
+      "layer": "A-FURN",
+      "corner1": [5300, 4020],
+      "corner2": [6900, 4100]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 1 - Left pillow",
+      "layer": "A-FURN",
+      "corner1": [5400, 3600],
+      "corner2": [6050, 3980]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 1 - Right pillow",
+      "layer": "A-FURN",
+      "corner1": [6150, 3600],
+      "corner2": [6800, 3980]
+    },
+    {
+      "op": "draw_line",
+      "comment": "Phong ngu 1 - Bed blanket fold line 1",
+      "layer": "A-FURN",
+      "start": [5300, 3350],
+      "end": [6900, 3350]
+    },
+    {
+      "op": "draw_line",
+      "comment": "Phong ngu 1 - Bed blanket fold line 2",
+      "layer": "A-FURN",
+      "start": [5300, 3200],
+      "end": [6900, 3200]
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "Phong ngu 1 - Wardrobe along right wall (x=7550..8150, y=2150..4100, clear of PN1 door)",
+      "layer": "A-FURN",
+      "corner1": [7550, 2150],
+      "corner2": [8150, 4100]
+    },
+    {
+      "op": "draw_line",
+      "comment": "Phong ngu 1 - Wardrobe hanging rod line",
+      "layer": "A-FURN",
+      "start": [7850, 2200],
+      "end": [7850, 4050]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [7550, 2650],
+      "end": [8150, 2650]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [7550, 3150],
+      "end": [8150, 3150]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-FURN",
+      "start": [7550, 3650],
+      "end": [8150, 3650]
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "WC 2 - Sink/lavabo vanity counter at top-left",
+      "layer": "A-SANITARY",
+      "corner1": [8250, 3600],
+      "corner2": [8850, 4100]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "WC 2 - Lavabo basin",
+      "layer": "A-SANITARY",
+      "corner1": [8350, 3680],
+      "corner2": [8750, 4020]
+    },
+    {
+      "op": "draw_circle",
+      "comment": "WC 2 - Lavabo drain",
+      "layer": "A-SANITARY",
+      "center": [8550, 3850],
+      "radius": 30
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "WC 2 - Toilet cistern/tank at middle-left",
+      "layer": "A-SANITARY",
+      "corner1": [8250, 2800],
+      "corner2": [8450, 3200]
+    },
+    {
+      "op": "draw_rectangle",
+      "comment": "WC 2 - Toilet bowl body",
+      "layer": "A-SANITARY",
+      "corner1": [8450, 2840],
+      "corner2": [8900, 3160]
+    },
+    {
+      "op": "draw_circle",
+      "comment": "WC 2 - Toilet inner bowl",
+      "layer": "A-SANITARY",
+      "center": [8680, 3000],
+      "radius": 110
+    },
+
+    {
+      "op": "draw_rectangle",
+      "comment": "WC 2 - Shower area at top-right",
+      "layer": "A-SANITARY",
+      "corner1": [8950, 3350],
+      "corner2": [9550, 4100]
+    },
+    {
+      "op": "draw_circle",
+      "comment": "WC 2 - Shower floor drain",
+      "layer": "A-SANITARY",
+      "center": [9250, 3725],
+      "radius": 50
+    },
+    {
+      "op": "draw_line",
+      "comment": "WC 2 - Shower drain slope line 1",
+      "layer": "A-SANITARY",
+      "start": [8950, 3350],
+      "end": [9215, 3690]
+    },
+    {
+      "op": "draw_line",
+      "comment": "WC 2 - Shower drain slope line 2",
+      "layer": "A-SANITARY",
+      "start": [9550, 3350],
+      "end": [9285, 3690]
+    },
+    {
+      "op": "draw_line",
+      "comment": "WC 2 - Shower drain slope line 3",
+      "layer": "A-SANITARY",
+      "start": [9550, 4100],
+      "end": [9285, 3760]
+    },
+    {
+      "op": "draw_line",
+      "comment": "WC 2 - Shower drain slope line 4",
+      "layer": "A-SANITARY",
+      "start": [8950, 4100],
+      "end": [9215, 3760]
+    }
+  ]
+}

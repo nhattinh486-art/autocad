@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "autocad": {
+      "command": "C:\\path\\to\\CAD-MCP\\.venv\\Scripts\\python.exe",
+      "args": [
+        "C:\\path\\to\\CAD-MCP\\src\\server.py"
+      ],
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "description": "Step 05: Room Labels, Elevation Marker, Stair Annotations, and Drawing Title",
+  "units": "mm",
+  "operations": [
+    {
+      "op": "create_layer",
+      "name": "A-ANNO-TEXT",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-ANNO-TITL",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+
+    {
+      "op": "draw_text",
+      "id": "label_ban_cong",
+      "comment": "Balcony label placed cleanly between double-door swing (y<=2500) and plant (y>=3000)",
+      "layer": "A-ANNO-TEXT",
+      "text": "BAN CÔNG",
+      "position": [-700, 2750],
+      "height": 130,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "label_phong_ngu_2",
+      "comment": "Bedroom 2 label in clear floor area between bed (y>=2100) and TV console (y<=500)",
+      "layer": "A-ANNO-TEXT",
+      "text": "PHÒNG NGỦ 2",
+      "position": [2200, 1500],
+      "height": 180,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "label_phong_ngu_1",
+      "comment": "Bedroom 1 label in clear floor area below bed (y>=2200) and left of door (x>=7200)",
+      "layer": "A-ANNO-TEXT",
+      "text": "PHÒNG NGỦ 1",
+      "position": [6300, 1800],
+      "height": 180,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "label_wc_2",
+      "comment": "WC 2 label in clear zone between door swing (y<=1850) and toilet (y>=2800)",
+      "layer": "A-ANNO-TEXT",
+      "text": "WC 2",
+      "position": [8900, 2400],
+      "height": 150,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "label_sanh_thang",
+      "comment": "Stair lobby label in Sanh thang (x=9650..12100, y=100..1400)",
+      "layer": "A-ANNO-TEXT",
+      "text": "SẢNH THANG",
+      "position": [10900, 900],
+      "height": 160,
+      "align": "middle_center"
+    },
+
+    {
+      "op": "draw_rectangle",
+      "id": "elev_box_5800",
+      "comment": "Elevation marker box below SANH THANG",
+      "layer": "A-ANNO-TEXT",
+      "corner1": [10500, 380],
+      "corner2": [11300, 620]
+    },
+    {
+      "op": "draw_line",
+      "id": "elev_tri_1",
+      "layer": "A-ANNO-TEXT",
+      "start": [10380, 620],
+      "end": [10500, 620]
+    },
+    {
+      "op": "draw_line",
+      "id": "elev_tri_2",
+      "layer": "A-ANNO-TEXT",
+      "start": [10380, 620],
+      "end": [10440, 500]
+    },
+    {
+      "op": "draw_line",
+      "id": "elev_tri_3",
+      "layer": "A-ANNO-TEXT",
+      "start": [10440, 500],
+      "end": [10500, 620]
+    },
+    {
+      "op": "draw_text",
+      "id": "label_elev_5800",
+      "comment": "Floor elevation marker +5.800",
+      "layer": "A-ANNO-TEXT",
+      "text": "+5.800",
+      "position": [10900, 500],
+      "height": 130,
+      "align": "middle_center"
+    },
+
+    {
+      "op": "draw_text",
+      "id": "label_thong_tang_1",
+      "comment": "Stair void line 1 centered in void (x=10700..11050, y=1400..3150)",
+      "layer": "A-ANNO-TEXT",
+      "text": "THÔNG",
+      "position": [10875, 2400],
+      "height": 85,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "label_thong_tang_2",
+      "comment": "Stair void line 2 centered in void (x=10700..11050, y=1400..3150)",
+      "layer": "A-ANNO-TEXT",
+      "text": "TẦNG",
+      "position": [10875, 2150],
+      "height": 85,
+      "align": "middle_center"
+    },
+
+    {
+      "op": "draw_text",
+      "id": "stair_step_01",
+      "layer": "A-ANNO-TEXT",
+      "text": "01",
+      "position": [11850, 1525],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_03",
+      "layer": "A-ANNO-TEXT",
+      "text": "03",
+      "position": [11850, 2025],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_05",
+      "layer": "A-ANNO-TEXT",
+      "text": "05",
+      "position": [11850, 2525],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_07",
+      "layer": "A-ANNO-TEXT",
+      "text": "07",
+      "position": [11850, 3025],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_09",
+      "layer": "A-ANNO-TEXT",
+      "text": "09",
+      "position": [11450, 3850],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_11",
+      "layer": "A-ANNO-TEXT",
+      "text": "11",
+      "position": [9900, 3025],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_13",
+      "layer": "A-ANNO-TEXT",
+      "text": "13",
+      "position": [9900, 2525],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_15",
+      "layer": "A-ANNO-TEXT",
+      "text": "15",
+      "position": [9900, 2025],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_17",
+      "layer": "A-ANNO-TEXT",
+      "text": "17",
+      "position": [9900, 1525],
+      "height": 90,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "id": "stair_step_20",
+      "layer": "A-ANNO-TEXT",
+      "text": "20",
+      "position": [10450, 1525],
+      "height": 90,
+      "align": "middle_center"
+    },
+
+    {
+      "op": "draw_text",
+      "id": "title_main",
+      "comment": "Drawing title centered below bottom grid bubbles (bubbles end at y=-2600)",
+      "layer": "A-ANNO-TITL",
+      "text": "MẶT BẰNG LẦU 1",
+      "position": [6100, -3400],
+      "height": 360,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "id": "title_underline",
+      "comment": "Underline below MAT BANG LAU 1",
+      "layer": "A-ANNO-TITL",
+      "start": [4100, -3650],
+      "end": [8100, -3650]
+    },
+    {
+      "op": "draw_text",
+      "id": "title_scale",
+      "comment": "Scale label below drawing title",
+      "layer": "A-ANNO-TITL",
+      "text": "TL: 1/100",
+      "position": [6100, -4000],
+      "height": 220,
+      "align": "middle_center"
+    }
+  ]
+}

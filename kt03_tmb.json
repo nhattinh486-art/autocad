@@ -1,0 +1,4401 @@
+{
+  "sheet": "KT-03",
+  "offset": [
+    68000,
+    0
+  ],
+  "operations": [
+    {
+      "op": "create_layer",
+      "name": "SITE_BOUNDARY",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "DIM",
+      "color": 3,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-PAVE",
+      "color": 8,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-PLANT",
+      "color": 3,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "WALL_EXT",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "WALL_INT",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "WALL_HATCH",
+      "color": 8,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "COLUMN",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "COLUMN_HATCH",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-FURN",
+      "color": 4,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-STAIR",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-CAR",
+      "color": 5,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-ANNO-TEXT",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "A-ANNO-TITL",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "create_layer",
+      "name": "BORDER",
+      "color": 7,
+      "linetype": "Continuous"
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "SITE_BOUNDARY",
+      "corner1": [
+        0,
+        0
+      ],
+      "corner2": [
+        26600,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "SITE_BOUNDARY",
+      "start": [
+        5150,
+        0
+      ],
+      "end": [
+        5150,
+        14000
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        14000
+      ],
+      "end": [
+        5150,
+        14000
+      ],
+      "line_point": [
+        2575.0,
+        16200
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        0
+      ],
+      "end": [
+        5150,
+        0
+      ],
+      "line_point": [
+        2575.0,
+        -1600
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        5150,
+        14000
+      ],
+      "end": [
+        12550,
+        14000
+      ],
+      "line_point": [
+        8850.0,
+        16200
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        5150,
+        0
+      ],
+      "end": [
+        12550,
+        0
+      ],
+      "line_point": [
+        8850.0,
+        -1600
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        12550,
+        14000
+      ],
+      "end": [
+        26600,
+        14000
+      ],
+      "line_point": [
+        19575.0,
+        16200
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        12550,
+        0
+      ],
+      "end": [
+        26600,
+        0
+      ],
+      "line_point": [
+        19575.0,
+        -1600
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        14000
+      ],
+      "end": [
+        26600,
+        14000
+      ],
+      "line_point": [
+        13300,
+        17100
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        0
+      ],
+      "end": [
+        26600,
+        0
+      ],
+      "line_point": [
+        13300,
+        -2500
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        0
+      ],
+      "end": [
+        0,
+        3500
+      ],
+      "line_point": [
+        -1400,
+        1750.0
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        26600,
+        0
+      ],
+      "end": [
+        26600,
+        3500
+      ],
+      "line_point": [
+        28000,
+        1750.0
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        3500
+      ],
+      "end": [
+        0,
+        13000
+      ],
+      "line_point": [
+        -1400,
+        8250.0
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        26600,
+        3500
+      ],
+      "end": [
+        26600,
+        13000
+      ],
+      "line_point": [
+        28000,
+        8250.0
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        13000
+      ],
+      "end": [
+        0,
+        14000
+      ],
+      "line_point": [
+        -1400,
+        13500.0
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        26600,
+        13000
+      ],
+      "end": [
+        26600,
+        14000
+      ],
+      "line_point": [
+        28000,
+        13500.0
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        0,
+        0
+      ],
+      "end": [
+        0,
+        14000
+      ],
+      "line_point": [
+        -2300,
+        7000
+      ]
+    },
+    {
+      "op": "add_dimension",
+      "layer": "DIM",
+      "start": [
+        26600,
+        0
+      ],
+      "end": [
+        26600,
+        14000
+      ],
+      "line_point": [
+        28900,
+        7000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5950,
+        0
+      ],
+      "end": [
+        5950,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        6750,
+        0
+      ],
+      "end": [
+        6750,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        7550,
+        0
+      ],
+      "end": [
+        7550,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        8350,
+        0
+      ],
+      "end": [
+        8350,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        9150,
+        0
+      ],
+      "end": [
+        9150,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        9950,
+        0
+      ],
+      "end": [
+        9950,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        10750,
+        0
+      ],
+      "end": [
+        10750,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        11550,
+        0
+      ],
+      "end": [
+        11550,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        12350,
+        0
+      ],
+      "end": [
+        12350,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        800
+      ],
+      "end": [
+        12550,
+        800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        1600
+      ],
+      "end": [
+        12550,
+        1600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        2400
+      ],
+      "end": [
+        12550,
+        2400
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        3200
+      ],
+      "end": [
+        12550,
+        3200
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        4000
+      ],
+      "end": [
+        12550,
+        4000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        4800
+      ],
+      "end": [
+        12550,
+        4800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        5600
+      ],
+      "end": [
+        12550,
+        5600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        6400
+      ],
+      "end": [
+        12550,
+        6400
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        7200
+      ],
+      "end": [
+        12550,
+        7200
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        8000
+      ],
+      "end": [
+        12550,
+        8000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        8800
+      ],
+      "end": [
+        12550,
+        8800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        9600
+      ],
+      "end": [
+        12550,
+        9600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        10400
+      ],
+      "end": [
+        12550,
+        10400
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        11200
+      ],
+      "end": [
+        12550,
+        11200
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        12000
+      ],
+      "end": [
+        12550,
+        12000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        12800
+      ],
+      "end": [
+        12550,
+        12800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        5150,
+        13600
+      ],
+      "end": [
+        12550,
+        13600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        13350,
+        0
+      ],
+      "end": [
+        13350,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        14150,
+        0
+      ],
+      "end": [
+        14150,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        14950,
+        0
+      ],
+      "end": [
+        14950,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        15750,
+        0
+      ],
+      "end": [
+        15750,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        16550,
+        0
+      ],
+      "end": [
+        16550,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        17350,
+        0
+      ],
+      "end": [
+        17350,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        18150,
+        0
+      ],
+      "end": [
+        18150,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        18950,
+        0
+      ],
+      "end": [
+        18950,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        19750,
+        0
+      ],
+      "end": [
+        19750,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        20550,
+        0
+      ],
+      "end": [
+        20550,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        21350,
+        0
+      ],
+      "end": [
+        21350,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        22150,
+        0
+      ],
+      "end": [
+        22150,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        22950,
+        0
+      ],
+      "end": [
+        22950,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        23750,
+        0
+      ],
+      "end": [
+        23750,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        24550,
+        0
+      ],
+      "end": [
+        24550,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        25350,
+        0
+      ],
+      "end": [
+        25350,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        26150,
+        0
+      ],
+      "end": [
+        26150,
+        3500
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        12550,
+        800
+      ],
+      "end": [
+        26600,
+        800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        12550,
+        1600
+      ],
+      "end": [
+        26600,
+        1600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        12550,
+        2400
+      ],
+      "end": [
+        26600,
+        2400
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PAVE",
+      "start": [
+        12550,
+        3200
+      ],
+      "end": [
+        26600,
+        3200
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "A-CAR",
+      "corner1": [
+        6300,
+        7600
+      ],
+      "corner2": [
+        8300,
+        12200
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "A-CAR",
+      "corner1": [
+        6500,
+        8600
+      ],
+      "corner2": [
+        8100,
+        10800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-CAR",
+      "start": [
+        6300,
+        8400
+      ],
+      "end": [
+        6500,
+        8600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-CAR",
+      "start": [
+        8300,
+        8400
+      ],
+      "end": [
+        8100,
+        8600
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-CAR",
+      "start": [
+        6300,
+        11100
+      ],
+      "end": [
+        6500,
+        10800
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-CAR",
+      "start": [
+        8300,
+        11100
+      ],
+      "end": [
+        8100,
+        10800
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "WALL_EXT",
+      "corner1": [
+        14475,
+        3500
+      ],
+      "corner2": [
+        26475,
+        12750
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "WALL_EXT",
+      "corner1": [
+        14695,
+        3720
+      ],
+      "corner2": [
+        26255,
+        12530
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "WALL_EXT",
+      "corner1": [
+        12675,
+        3500
+      ],
+      "corner2": [
+        14475,
+        8250
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "WALL_EXT",
+      "corner1": [
+        18375,
+        2300
+      ],
+      "corner2": [
+        21225,
+        3500
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "WALL_EXT",
+      "corner1": [
+        19275,
+        12750
+      ],
+      "corner2": [
+        21675,
+        14000
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "WALL_INT",
+      "start": [
+        14475,
+        8250
+      ],
+      "end": [
+        18375,
+        8250
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "WALL_INT",
+      "start": [
+        18375,
+        8250
+      ],
+      "end": [
+        18375,
+        12750
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "WALL_INT",
+      "start": [
+        21225,
+        8250
+      ],
+      "end": [
+        21225,
+        12750
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "WALL_INT",
+      "start": [
+        21225,
+        8250
+      ],
+      "end": [
+        26475,
+        8250
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "WALL_INT",
+      "start": [
+        22825,
+        9200
+      ],
+      "end": [
+        22825,
+        12750
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        9050
+      ],
+      "end": [
+        21175,
+        9050
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        9350
+      ],
+      "end": [
+        21175,
+        9350
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        9650
+      ],
+      "end": [
+        21175,
+        9650
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        9950
+      ],
+      "end": [
+        21175,
+        9950
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        10250
+      ],
+      "end": [
+        21175,
+        10250
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        10550
+      ],
+      "end": [
+        21175,
+        10550
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        10850
+      ],
+      "end": [
+        21175,
+        10850
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        18425,
+        11150
+      ],
+      "end": [
+        21175,
+        11150
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-STAIR",
+      "start": [
+        19800,
+        9050
+      ],
+      "end": [
+        19800,
+        11700
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "A-FURN",
+      "corner1": [
+        15375,
+        9500
+      ],
+      "corner2": [
+        17175,
+        11300
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "A-FURN",
+      "corner1": [
+        15875,
+        4900
+      ],
+      "corner2": [
+        18075,
+        6900
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "A-FURN",
+      "corner1": [
+        22675,
+        5100
+      ],
+      "corner2": [
+        25075,
+        6700
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "A-FURN",
+      "corner1": [
+        24275,
+        9800
+      ],
+      "corner2": [
+        26175,
+        11700
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        1600,
+        12800
+      ],
+      "radius": 1900
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        1600,
+        12800
+      ],
+      "radius": 475.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2075.0,
+        12800.0
+      ],
+      "end": [
+        3500.0,
+        12800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2011.3620667976083,
+        13037.5
+      ],
+      "end": [
+        3245.4482671904334,
+        13750.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1837.5,
+        13211.362066797608
+      ],
+      "end": [
+        2550.0,
+        14445.448267190433
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1600.0,
+        13275.0
+      ],
+      "end": [
+        1600.0000000000002,
+        14700.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1362.5,
+        13211.362066797608
+      ],
+      "end": [
+        650.0000000000005,
+        14445.448267190433
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1188.6379332023917,
+        13037.5
+      ],
+      "end": [
+        -45.448267190433626,
+        13750.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1125.0,
+        12800.0
+      ],
+      "end": [
+        -300.0,
+        12800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1188.6379332023917,
+        12562.5
+      ],
+      "end": [
+        -45.4482671904334,
+        11850.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1362.4999999999998,
+        12388.637933202392
+      ],
+      "end": [
+        649.9999999999992,
+        11154.551732809567
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1600.0,
+        12325.0
+      ],
+      "end": [
+        1599.9999999999995,
+        10900.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1837.5,
+        12388.637933202392
+      ],
+      "end": [
+        2550.0,
+        11154.551732809567
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2011.3620667976083,
+        12562.5
+      ],
+      "end": [
+        3245.448267190433,
+        11850.0
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        4200,
+        12300
+      ],
+      "radius": 1800
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        4200,
+        12300
+      ],
+      "radius": 450.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4650.0,
+        12300.0
+      ],
+      "end": [
+        6000.0,
+        12300.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4589.711431702997,
+        12525.0
+      ],
+      "end": [
+        5758.845726811989,
+        13200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4425.0,
+        12689.711431702997
+      ],
+      "end": [
+        5100.0,
+        13858.84572681199
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4200.0,
+        12750.0
+      ],
+      "end": [
+        4200.0,
+        14100.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3975.0,
+        12689.711431702997
+      ],
+      "end": [
+        3300.0000000000005,
+        13858.84572681199
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3810.2885682970027,
+        12525.0
+      ],
+      "end": [
+        2641.1542731880104,
+        13200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3750.0,
+        12300.0
+      ],
+      "end": [
+        2400.0,
+        12300.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3810.2885682970027,
+        12075.0
+      ],
+      "end": [
+        2641.154273188011,
+        11400.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3975.0,
+        11910.288568297003
+      ],
+      "end": [
+        3299.999999999999,
+        10741.15427318801
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4200.0,
+        11850.0
+      ],
+      "end": [
+        4200.0,
+        10500.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4425.0,
+        11910.288568297003
+      ],
+      "end": [
+        5100.0,
+        10741.15427318801
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4589.711431702997,
+        12075.0
+      ],
+      "end": [
+        5758.845726811989,
+        11400.0
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        1500,
+        9200
+      ],
+      "radius": 1700
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        1500,
+        9200
+      ],
+      "radius": 425.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1925.0,
+        9200.0
+      ],
+      "end": [
+        3200.0,
+        9200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1868.0607966083865,
+        9412.5
+      ],
+      "end": [
+        2972.243186433546,
+        10050.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1712.5,
+        9568.060796608386
+      ],
+      "end": [
+        2350.0,
+        10672.243186433545
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1500.0,
+        9625.0
+      ],
+      "end": [
+        1500.0,
+        10900.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1287.5,
+        9568.060796608386
+      ],
+      "end": [
+        650.0000000000003,
+        10672.243186433545
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1131.9392033916135,
+        9412.5
+      ],
+      "end": [
+        27.756813566454184,
+        10050.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1075.0,
+        9200.0
+      ],
+      "end": [
+        -200.0,
+        9200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1131.9392033916135,
+        8987.5
+      ],
+      "end": [
+        27.75681356645441,
+        8350.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1287.4999999999998,
+        8831.939203391614
+      ],
+      "end": [
+        649.9999999999992,
+        7727.756813566455
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1500.0,
+        8775.0
+      ],
+      "end": [
+        1499.9999999999998,
+        7500.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1712.5,
+        8831.939203391614
+      ],
+      "end": [
+        2350.0,
+        7727.756813566454
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1868.0607966083862,
+        8987.5
+      ],
+      "end": [
+        2972.243186433545,
+        8350.0
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        4000,
+        8200
+      ],
+      "radius": 1600
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        4000,
+        8200
+      ],
+      "radius": 400.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4400.0,
+        8200.0
+      ],
+      "end": [
+        5600.0,
+        8200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4346.410161513775,
+        8400.0
+      ],
+      "end": [
+        5385.6406460551025,
+        9000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4200.0,
+        8546.410161513775
+      ],
+      "end": [
+        4800.0,
+        9585.640646055102
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4000.0,
+        8600.0
+      ],
+      "end": [
+        4000.0,
+        9800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3800.0,
+        8546.410161513775
+      ],
+      "end": [
+        3200.0000000000005,
+        9585.640646055102
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3653.5898384862244,
+        8400.0
+      ],
+      "end": [
+        2614.359353944898,
+        9000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3600.0,
+        8200.0
+      ],
+      "end": [
+        2400.0,
+        8200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3653.5898384862244,
+        8000.0
+      ],
+      "end": [
+        2614.3593539448984,
+        7400.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3800.0,
+        7853.589838486225
+      ],
+      "end": [
+        3199.999999999999,
+        6814.359353944898
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4000.0,
+        7800.0
+      ],
+      "end": [
+        3999.9999999999995,
+        6600.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4200.0,
+        7853.589838486225
+      ],
+      "end": [
+        4800.0,
+        6814.359353944898
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        4346.410161513775,
+        8000.0
+      ],
+      "end": [
+        5385.640646055102,
+        7399.999999999999
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        1800,
+        4800
+      ],
+      "radius": 1800
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        1800,
+        4800
+      ],
+      "radius": 450.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2250.0,
+        4800.0
+      ],
+      "end": [
+        3600.0,
+        4800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2189.7114317029973,
+        5025.0
+      ],
+      "end": [
+        3358.8457268119896,
+        5700.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2025.0,
+        5189.711431702997
+      ],
+      "end": [
+        2700.0,
+        6358.845726811989
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1800.0,
+        5250.0
+      ],
+      "end": [
+        1800.0,
+        6600.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1575.0,
+        5189.711431702997
+      ],
+      "end": [
+        900.0000000000005,
+        6358.845726811989
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1410.2885682970027,
+        5025.0
+      ],
+      "end": [
+        241.1542731880104,
+        5700.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1350.0,
+        4800.0
+      ],
+      "end": [
+        0.0,
+        4800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1410.2885682970027,
+        4575.0
+      ],
+      "end": [
+        241.15427318801062,
+        3900.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1574.9999999999998,
+        4410.288568297003
+      ],
+      "end": [
+        899.9999999999992,
+        3241.154273188011
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        1800.0,
+        4350.0
+      ],
+      "end": [
+        1799.9999999999998,
+        3000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2025.0,
+        4410.288568297003
+      ],
+      "end": [
+        2700.0,
+        3241.154273188011
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        2189.7114317029973,
+        4575.0
+      ],
+      "end": [
+        3358.845726811989,
+        3899.999999999999
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        3500,
+        1800
+      ],
+      "radius": 1900
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        3500,
+        1800
+      ],
+      "radius": 475.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3975.0,
+        1800.0
+      ],
+      "end": [
+        5400.0,
+        1800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3911.3620667976083,
+        2037.5
+      ],
+      "end": [
+        5145.448267190433,
+        2750.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3737.5,
+        2211.3620667976083
+      ],
+      "end": [
+        4450.0,
+        3445.4482671904334
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3500.0,
+        2275.0
+      ],
+      "end": [
+        3500.0,
+        3700.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3262.5,
+        2211.3620667976083
+      ],
+      "end": [
+        2550.0000000000005,
+        3445.4482671904334
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3088.6379332023917,
+        2037.5
+      ],
+      "end": [
+        1854.5517328095664,
+        2750.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3025.0,
+        1800.0
+      ],
+      "end": [
+        1600.0,
+        1800.0000000000002
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3088.6379332023917,
+        1562.5
+      ],
+      "end": [
+        1854.5517328095666,
+        849.9999999999998
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3262.5,
+        1388.6379332023917
+      ],
+      "end": [
+        2549.999999999999,
+        154.55173280956683
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3500.0,
+        1325.0
+      ],
+      "end": [
+        3499.9999999999995,
+        -100.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3737.5,
+        1388.6379332023917
+      ],
+      "end": [
+        4450.0,
+        154.5517328095666
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        3911.3620667976083,
+        1562.4999999999998
+      ],
+      "end": [
+        5145.448267190433,
+        849.9999999999992
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        11800,
+        13000
+      ],
+      "radius": 1700
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        11800,
+        13000
+      ],
+      "radius": 425.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        12225.0,
+        13000.0
+      ],
+      "end": [
+        13500.0,
+        13000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        12168.060796608386,
+        13212.5
+      ],
+      "end": [
+        13272.243186433545,
+        13850.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        12012.5,
+        13368.060796608386
+      ],
+      "end": [
+        12650.0,
+        14472.243186433545
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11800.0,
+        13425.0
+      ],
+      "end": [
+        11800.0,
+        14700.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11587.5,
+        13368.060796608386
+      ],
+      "end": [
+        10950.0,
+        14472.243186433545
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11431.939203391614,
+        13212.5
+      ],
+      "end": [
+        10327.756813566455,
+        13850.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11375.0,
+        13000.0
+      ],
+      "end": [
+        10100.0,
+        13000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11431.939203391614,
+        12787.5
+      ],
+      "end": [
+        10327.756813566455,
+        12150.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11587.5,
+        12631.939203391614
+      ],
+      "end": [
+        10950.0,
+        11527.756813566455
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11800.0,
+        12575.0
+      ],
+      "end": [
+        11800.0,
+        11300.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        12012.5,
+        12631.939203391614
+      ],
+      "end": [
+        12650.0,
+        11527.756813566455
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        12168.060796608386,
+        12787.5
+      ],
+      "end": [
+        13272.243186433545,
+        12150.0
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        17800,
+        13200
+      ],
+      "radius": 1600
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        17800,
+        13200
+      ],
+      "radius": 400.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        18200.0,
+        13200.0
+      ],
+      "end": [
+        19400.0,
+        13200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        18146.410161513777,
+        13400.0
+      ],
+      "end": [
+        19185.6406460551,
+        14000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        18000.0,
+        13546.410161513775
+      ],
+      "end": [
+        18600.0,
+        14585.640646055102
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17800.0,
+        13600.0
+      ],
+      "end": [
+        17800.0,
+        14800.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17600.0,
+        13546.410161513775
+      ],
+      "end": [
+        17000.0,
+        14585.640646055102
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17453.589838486223,
+        13400.0
+      ],
+      "end": [
+        16414.3593539449,
+        14000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17400.0,
+        13200.0
+      ],
+      "end": [
+        16200.0,
+        13200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17453.589838486223,
+        13000.0
+      ],
+      "end": [
+        16414.3593539449,
+        12400.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17600.0,
+        12853.589838486225
+      ],
+      "end": [
+        17000.0,
+        11814.3593539449
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17800.0,
+        12800.0
+      ],
+      "end": [
+        17800.0,
+        11600.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        18000.0,
+        12853.589838486225
+      ],
+      "end": [
+        18600.0,
+        11814.359353944898
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        18146.410161513777,
+        13000.0
+      ],
+      "end": [
+        19185.6406460551,
+        12400.0
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        26200,
+        13200
+      ],
+      "radius": 1800
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        26200,
+        13200
+      ],
+      "radius": 450.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26650.0,
+        13200.0
+      ],
+      "end": [
+        28000.0,
+        13200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26589.711431703,
+        13425.0
+      ],
+      "end": [
+        27758.84572681199,
+        14100.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26425.0,
+        13589.711431702997
+      ],
+      "end": [
+        27100.0,
+        14758.84572681199
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26200.0,
+        13650.0
+      ],
+      "end": [
+        26200.0,
+        15000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25975.0,
+        13589.711431702997
+      ],
+      "end": [
+        25300.0,
+        14758.84572681199
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25810.288568297,
+        13425.0
+      ],
+      "end": [
+        24641.15427318801,
+        14100.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25750.0,
+        13200.0
+      ],
+      "end": [
+        24400.0,
+        13200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25810.288568297,
+        12975.0
+      ],
+      "end": [
+        24641.15427318801,
+        12300.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25975.0,
+        12810.288568297003
+      ],
+      "end": [
+        25300.0,
+        11641.15427318801
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26200.0,
+        12750.0
+      ],
+      "end": [
+        26200.0,
+        11400.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26425.0,
+        12810.288568297003
+      ],
+      "end": [
+        27100.0,
+        11641.15427318801
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26589.711431703,
+        12975.0
+      ],
+      "end": [
+        27758.84572681199,
+        12300.0
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        10600,
+        1200
+      ],
+      "radius": 1700
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        10600,
+        1200
+      ],
+      "radius": 425.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        11025.0,
+        1200.0
+      ],
+      "end": [
+        12300.0,
+        1200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10968.060796608386,
+        1412.5
+      ],
+      "end": [
+        12072.243186433545,
+        2050.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10812.5,
+        1568.0607966083865
+      ],
+      "end": [
+        11450.0,
+        2672.243186433546
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10600.0,
+        1625.0
+      ],
+      "end": [
+        10600.0,
+        2900.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10387.5,
+        1568.0607966083865
+      ],
+      "end": [
+        9750.0,
+        2672.243186433546
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10231.939203391614,
+        1412.5
+      ],
+      "end": [
+        9127.756813566455,
+        2050.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10175.0,
+        1200.0
+      ],
+      "end": [
+        8900.0,
+        1200.0000000000002
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10231.939203391614,
+        987.5
+      ],
+      "end": [
+        9127.756813566455,
+        349.9999999999998
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10387.5,
+        831.9392033916137
+      ],
+      "end": [
+        9750.0,
+        -272.24318643354536
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10600.0,
+        775.0
+      ],
+      "end": [
+        10600.0,
+        -500.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10812.5,
+        831.9392033916135
+      ],
+      "end": [
+        11450.0,
+        -272.2431864335456
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        10968.060796608386,
+        987.4999999999998
+      ],
+      "end": [
+        12072.243186433545,
+        349.9999999999992
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        16800,
+        1200
+      ],
+      "radius": 1700
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        16800,
+        1200
+      ],
+      "radius": 425.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17225.0,
+        1200.0
+      ],
+      "end": [
+        18500.0,
+        1200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17168.060796608388,
+        1412.5
+      ],
+      "end": [
+        18272.243186433545,
+        2050.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17012.5,
+        1568.0607966083865
+      ],
+      "end": [
+        17650.0,
+        2672.243186433546
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16800.0,
+        1625.0
+      ],
+      "end": [
+        16800.0,
+        2900.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16587.5,
+        1568.0607966083865
+      ],
+      "end": [
+        15950.0,
+        2672.243186433546
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16431.939203391612,
+        1412.5
+      ],
+      "end": [
+        15327.756813566455,
+        2050.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16375.0,
+        1200.0
+      ],
+      "end": [
+        15100.0,
+        1200.0000000000002
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16431.939203391612,
+        987.5
+      ],
+      "end": [
+        15327.756813566455,
+        349.9999999999998
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16587.5,
+        831.9392033916137
+      ],
+      "end": [
+        15950.0,
+        -272.24318643354536
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16800.0,
+        775.0
+      ],
+      "end": [
+        16800.0,
+        -500.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17012.5,
+        831.9392033916135
+      ],
+      "end": [
+        17650.0,
+        -272.2431864335456
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17168.060796608388,
+        987.4999999999998
+      ],
+      "end": [
+        18272.243186433545,
+        349.9999999999992
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        26200,
+        1200
+      ],
+      "radius": 1800
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        26200,
+        1200
+      ],
+      "radius": 450.0
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26650.0,
+        1200.0
+      ],
+      "end": [
+        28000.0,
+        1200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26589.711431703,
+        1425.0
+      ],
+      "end": [
+        27758.84572681199,
+        2100.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26425.0,
+        1589.7114317029973
+      ],
+      "end": [
+        27100.0,
+        2758.845726811989
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26200.0,
+        1650.0
+      ],
+      "end": [
+        26200.0,
+        3000.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25975.0,
+        1589.7114317029973
+      ],
+      "end": [
+        25300.0,
+        2758.8457268119896
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25810.288568297,
+        1425.0
+      ],
+      "end": [
+        24641.15427318801,
+        2100.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25750.0,
+        1200.0
+      ],
+      "end": [
+        24400.0,
+        1200.0000000000002
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25810.288568297,
+        975.0
+      ],
+      "end": [
+        24641.15427318801,
+        299.9999999999998
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25975.0,
+        810.2885682970027
+      ],
+      "end": [
+        25300.0,
+        -358.8457268119894
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26200.0,
+        750.0
+      ],
+      "end": [
+        26200.0,
+        -600.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26425.0,
+        810.2885682970027
+      ],
+      "end": [
+        27100.0,
+        -358.8457268119894
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        26589.711431703,
+        974.9999999999998
+      ],
+      "end": [
+        27758.84572681199,
+        299.9999999999992
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        14800,
+        3200
+      ],
+      "radius": 950
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        14800,
+        3200
+      ],
+      "radius": 237.5
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        15037.5,
+        3200.0
+      ],
+      "end": [
+        15750.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        15005.681033398805,
+        3318.75
+      ],
+      "end": [
+        15622.724133595217,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14918.75,
+        3405.681033398804
+      ],
+      "end": [
+        15275.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14800.0,
+        3437.5
+      ],
+      "end": [
+        14800.0,
+        4150.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14681.25,
+        3405.681033398804
+      ],
+      "end": [
+        14325.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14594.318966601195,
+        3318.75
+      ],
+      "end": [
+        13977.275866404783,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14562.5,
+        3200.0
+      ],
+      "end": [
+        13850.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14594.318966601197,
+        3081.25
+      ],
+      "end": [
+        13977.275866404783,
+        2725.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14681.25,
+        2994.318966601196
+      ],
+      "end": [
+        14325.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14800.0,
+        2962.5
+      ],
+      "end": [
+        14800.0,
+        2250.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        14918.75,
+        2994.318966601196
+      ],
+      "end": [
+        15275.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        15005.681033398803,
+        3081.25
+      ],
+      "end": [
+        15622.724133595217,
+        2724.9999999999995
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        17200,
+        3200
+      ],
+      "radius": 950
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        17200,
+        3200
+      ],
+      "radius": 237.5
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17437.5,
+        3200.0
+      ],
+      "end": [
+        18150.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17405.681033398803,
+        3318.75
+      ],
+      "end": [
+        18022.724133595217,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17318.75,
+        3405.681033398804
+      ],
+      "end": [
+        17675.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17200.0,
+        3437.5
+      ],
+      "end": [
+        17200.0,
+        4150.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17081.25,
+        3405.681033398804
+      ],
+      "end": [
+        16725.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16994.318966601197,
+        3318.75
+      ],
+      "end": [
+        16377.275866404783,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16962.5,
+        3200.0
+      ],
+      "end": [
+        16250.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        16994.318966601197,
+        3081.25
+      ],
+      "end": [
+        16377.275866404783,
+        2725.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17081.25,
+        2994.318966601196
+      ],
+      "end": [
+        16725.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17200.0,
+        2962.5
+      ],
+      "end": [
+        17200.0,
+        2250.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17318.75,
+        2994.318966601196
+      ],
+      "end": [
+        17675.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        17405.681033398803,
+        3081.25
+      ],
+      "end": [
+        18022.724133595217,
+        2724.9999999999995
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        22200,
+        3200
+      ],
+      "radius": 950
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        22200,
+        3200
+      ],
+      "radius": 237.5
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22437.5,
+        3200.0
+      ],
+      "end": [
+        23150.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22405.681033398803,
+        3318.75
+      ],
+      "end": [
+        23022.724133595217,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22318.75,
+        3405.681033398804
+      ],
+      "end": [
+        22675.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22200.0,
+        3437.5
+      ],
+      "end": [
+        22200.0,
+        4150.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22081.25,
+        3405.681033398804
+      ],
+      "end": [
+        21725.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        21994.318966601197,
+        3318.75
+      ],
+      "end": [
+        21377.275866404783,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        21962.5,
+        3200.0
+      ],
+      "end": [
+        21250.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        21994.318966601197,
+        3081.25
+      ],
+      "end": [
+        21377.275866404783,
+        2725.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22081.25,
+        2994.318966601196
+      ],
+      "end": [
+        21725.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22200.0,
+        2962.5
+      ],
+      "end": [
+        22200.0,
+        2250.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22318.75,
+        2994.318966601196
+      ],
+      "end": [
+        22675.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        22405.681033398803,
+        3081.25
+      ],
+      "end": [
+        23022.724133595217,
+        2724.9999999999995
+      ]
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        25200,
+        3200
+      ],
+      "radius": 950
+    },
+    {
+      "op": "draw_circle",
+      "layer": "A-PLANT",
+      "center": [
+        25200,
+        3200
+      ],
+      "radius": 237.5
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25437.5,
+        3200.0
+      ],
+      "end": [
+        26150.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25405.681033398803,
+        3318.75
+      ],
+      "end": [
+        26022.724133595217,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25318.75,
+        3405.681033398804
+      ],
+      "end": [
+        25675.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25200.0,
+        3437.5
+      ],
+      "end": [
+        25200.0,
+        4150.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25081.25,
+        3405.681033398804
+      ],
+      "end": [
+        24725.0,
+        4022.7241335952167
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        24994.318966601197,
+        3318.75
+      ],
+      "end": [
+        24377.275866404783,
+        3675.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        24962.5,
+        3200.0
+      ],
+      "end": [
+        24250.0,
+        3200.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        24994.318966601197,
+        3081.25
+      ],
+      "end": [
+        24377.275866404783,
+        2725.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25081.25,
+        2994.318966601196
+      ],
+      "end": [
+        24725.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25200.0,
+        2962.5
+      ],
+      "end": [
+        25200.0,
+        2250.0
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25318.75,
+        2994.318966601196
+      ],
+      "end": [
+        25675.0,
+        2377.2758664047833
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-PLANT",
+      "start": [
+        25405.681033398803,
+        3081.25
+      ],
+      "end": [
+        26022.724133595217,
+        2724.9999999999995
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        2575,
+        6800
+      ],
+      "text": "VƯỜN CÂY",
+      "height": 320,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        8850,
+        6800
+      ],
+      "text": "SÂN TRƯỚC",
+      "height": 320,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        16000,
+        15200
+      ],
+      "text": "CON SÔNG",
+      "height": 360,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        29600,
+        7000
+      ],
+      "text": "NHÀ CŨ 1 TẦNG",
+      "height": 320,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        13575,
+        5900
+      ],
+      "text": "TIỀN SẢNH",
+      "height": 180,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        16275,
+        10400
+      ],
+      "text": "PHÒNG THỜ",
+      "height": 200,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        19475,
+        5900
+      ],
+      "text": "PHÒNG KHÁCH",
+      "height": 220,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        19800,
+        2900
+      ],
+      "text": "SẢNH PHỤ",
+      "height": 170,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        23875,
+        5900
+      ],
+      "text": "BẾP + ĂN",
+      "height": 220,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        24475,
+        9100
+      ],
+      "text": "PHÒNG NGỦ 1",
+      "height": 200,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        22025,
+        10900
+      ],
+      "text": "WC1",
+      "height": 160,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TEXT",
+      "position": [
+        8500,
+        -4000
+      ],
+      "text": "TỔNG MẶT BẰNG",
+      "height": 500,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "A-ANNO-TITL",
+      "start": [
+        5800,
+        -4350
+      ],
+      "end": [
+        11200,
+        -4350
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "BORDER",
+      "corner1": [
+        -3600,
+        -5200
+      ],
+      "corner2": [
+        38400,
+        18600
+      ]
+    },
+    {
+      "op": "draw_rectangle",
+      "layer": "BORDER",
+      "corner1": [
+        -3450,
+        -5050
+      ],
+      "corner2": [
+        38250,
+        18450
+      ]
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        -5050
+      ],
+      "end": [
+        32600,
+        18450
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        17353.333333333332
+      ],
+      "text": "HIỆU CHỈNH",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        16256.666666666666
+      ],
+      "text": "LẦN | NGÀY | THIẾT KẾ | DUYỆT",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        15160.0
+      ],
+      "end": [
+        38250,
+        15160.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        14298.333333333334
+      ],
+      "text": "CHỦ ĐẦU TƯ",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        13436.666666666666
+      ],
+      "text": "ÔNG: NGUYỄN BÁ MINH",
+      "height": 229,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        12575.0
+      ],
+      "end": [
+        38250,
+        12575.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        11870.0
+      ],
+      "text": "CÔNG TRÌNH",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        11165.0
+      ],
+      "text": "NHÀ Ở DÂN DỤNG",
+      "height": 229,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        10460.0
+      ],
+      "end": [
+        38250,
+        10460.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        9872.5
+      ],
+      "text": "ĐỊA ĐIỂM",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        9285.0
+      ],
+      "text": "THÔN ĐỒNG VĂN - XÃ AN PHÚ",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        8697.5
+      ],
+      "text": "MỸ ĐỨC - HÀ NỘI",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        8110.0
+      ],
+      "end": [
+        38250,
+        8110.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        7111.25
+      ],
+      "text": "ĐƠN VỊ TƯ VẤN THIẾT KẾ",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        6112.5
+      ],
+      "text": "CÔNG TY CỔ PHẦN KIẾN TRÚC",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        5113.75
+      ],
+      "text": "& ĐẦU TƯ XÂY DỰNG ANG",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        4115.0
+      ],
+      "end": [
+        38250,
+        4115.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        3363.0
+      ],
+      "text": "GIÁM ĐỐC: KTS. NGUYỄN ANH TUẤN",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        2611.0
+      ],
+      "text": "CHỦ TRÌ: KTS. NGUYỄN ANH TUẤN",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        1859.0
+      ],
+      "text": "THIẾT KẾ: KTS. VŨ NGỌC SƠN",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        1107.0
+      ],
+      "text": "KIỂM TRA: KTS. CÙ HUY QUỲNH",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        355.0
+      ],
+      "end": [
+        38250,
+        355.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        -193.33333333333337
+      ],
+      "text": "GIAI ĐOẠN THỰC HIỆN",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        -741.6666666666667
+      ],
+      "text": "HỒ SƠ THIẾT KẾ BẢN VẼ THI CÔNG",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        -1290.0
+      ],
+      "end": [
+        38250,
+        -1290.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        -1760.0
+      ],
+      "text": "HẠNG MỤC: PHẦN KIẾN TRÚC",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        -2230.0
+      ],
+      "text": "TÊN BẢN VẼ: TỔNG MẶT BẰNG",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_line",
+      "layer": "BORDER",
+      "start": [
+        32600,
+        -2700.0
+      ],
+      "end": [
+        38250,
+        -2700.0
+      ]
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        -3483.3333333333335
+      ],
+      "text": "TỶ LỆ: 1/100   |   HOÀN THÀNH: 2/2026",
+      "height": 172,
+      "align": "middle_center"
+    },
+    {
+      "op": "draw_text",
+      "layer": "A-ANNO-TITL",
+      "position": [
+        35425.0,
+        -4266.666666666667
+      ],
+      "text": "BẢN VẼ SỐ: KT-03",
+      "height": 229,
+      "align": "middle_center"
+    }
+  ]
+}
