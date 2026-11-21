@@ -6,3 +6,8 @@ __pycache__/
 *.dwl2
 *.log
 *.lsp
+*.dwg
+*.dxf
+kt*.json
+step_*.json
+plan_spec.md

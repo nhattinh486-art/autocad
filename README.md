@@ -36,8 +36,6 @@ Hướng dẫn và bộ công cụ mẫu để điều khiển **AutoCAD** tự 
 - `skills/autocad-swarm/SKILL.md` — Custom Skill cho Antigravity để tái sử dụng quy trình vẽ AutoCAD bằng Swarm.
 - `scripts/json_to_lsp.py` — Script Python biên dịch file JSON tọa độ thành AutoLISP (`.lsp`) hỗ trợ đầy đủ dấu tiếng Việt (`\U+XXXX`), hatch `SOLID`/`ANSI31` và đường dim kiến trúc.
 - `config/mcp_config.example.json` — File cấu hình mẫu cho `CAD-MCP` trong Antigravity.
-- `plan_spec.md`, `step_01_grid.json` .. `step_05_annotations.json` — Bộ mẫu bản vẽ **Mặt bằng Lầu 1**.
-- `kt01_tang1.json`, `kt02_tang2.json`, `kt03_tmb.json`, `nha_o_dan_dung_KT01_KT02_KT03.dwg` — Bộ mẫu 3 bản vẽ **Nhà ở dân dụng (KT-01, KT-02, KT-03)**.
 
 ---
 
