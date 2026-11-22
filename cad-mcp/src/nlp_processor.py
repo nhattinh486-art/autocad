@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import os
 import os.path
 
-# 统一使用配置单例（替代各模块重复读取 config.json）
+# Sử dụng thống nhất singleton cấu hình (thay thế việc đọc lặp lại config.json ở từng module)
 try:
     from .config import get_config
 except ImportError:
@@ -15,38 +15,54 @@ config = get_config()
 logger = logging.getLogger('nlp_processor')
 
 class NLPProcessor:
-    """自然语言处理器类，负责解析用户指令并转换为CAD操作"""
+    """Lớp xử lý ngôn ngữ tự nhiên, chịu trách nhiệm phân tích lệnh người dùng và chuyển đổi thành thao tác CAD"""
     
     def __init__(self):
         """
-        初始化NLP处理器
+        Khởi tạo bộ xử lý NLP
         """
         
         self.logger = logging.getLogger(__name__)
-        self.logger.info("自然语言处理器已初始化")
+        self.logger.info("Bộ xử lý ngôn ngữ tự nhiên đã được khởi tạo")
 
-        # 对于老版本的CAD不支持设置RGB颜色，所以为了兼容性，按照索引设置颜色
+        # Các phiên bản CAD cũ không hỗ trợ thiết lập màu RGB, vì vậy để đảm bảo tương thích, màu sắc được thiết lập theo chỉ số
         
-        # 详细颜色名称到RGB值的映射
+        # Ánh xạ chi tiết từ tên màu sang giá trị chỉ số màu (ACI)
         self.color_rgb_map = {
-            # 基本颜色
-            "红色": 1,
-            "黄色": 2,
-            "绿色": 3,
-            "青色": 4,
-            "蓝色": 5,
-            "洋红色": 6,
-            "白色": 7,
-            "灰色": 8,
-            "浅灰色": 9,
-            "黑色": 250,
-            "棕色": 251,
-            "橙色": 30,
-            "紫色": 200,
-            "粉色": 221,
+            # Màu cơ bản
+            "đỏ": 1,
+            "màu đỏ": 1,
+            "vàng": 2,
+            "màu vàng": 2,
+            "xanh lá": 3,
+            "xanh lục": 3,
+            "màu xanh lá": 3,
+            "xanh lơ": 4,
+            "lục lam": 4,
+            "xanh ngọc": 4,
+            "xanh dương": 5,
+            "xanh lam": 5,
+            "màu xanh dương": 5,
+            "hồng cánh sen": 6,
+            "đỏ tía": 6,
+            "trắng": 7,
+            "màu trắng": 7,
+            "xám": 8,
+            "màu xám": 8,
+            "xám nhạt": 9,
+            "đen": 250,
+            "màu đen": 250,
+            "nâu": 251,
+            "màu nâu": 251,
+            "cam": 30,
+            "màu cam": 30,
+            "tím": 200,
+            "màu tím": 200,
+            "hồng": 221,
+            "màu hồng": 221,
             
 
-            # 基本颜色 - 英文键
+            # Màu cơ bản - Khóa tiếng Anh
             "Red": 1,
             "Yellow": 2,
             "Green": 3,
@@ -64,48 +80,66 @@ class NLPProcessor:
                        
         }
         
-        # 扩展关键词映射
+        # Ánh xạ từ khóa hình dạng mở rộng
         self.shape_keywords = {
-            # 基本形状
-            "直线": "line", "线": "line",
-            "圆": "circle", "圆形": "circle",
-            "弧": "arc", "圆弧": "arc",
-            "矩形": "rectangle", "方形": "rectangle", "正方形": "square",
-            "多段线": "polyline", "折线": "polyline",
-            "文本": "text", "文字": "text",
-            "标注": "dimension", "尺寸标注": "dimension",
+            # Hình dạng cơ bản
+            "đường thẳng": "line", "đoạn thẳng": "line", "đường": "line",
+            "hình tròn": "circle", "đường tròn": "circle", "tròn": "circle",
+            "cung tròn": "arc", "cung": "arc",
+            "hình chữ nhật": "rectangle", "chữ nhật": "rectangle", "hình vuông": "square",
+            "đa tuyến": "polyline", "đường gấp khúc": "polyline", "đa giác": "polyline",
+            "văn bản": "text", "chữ": "text",
+            "ghi kích thước": "dimension", "kích thước": "dimension", "chú thích kích thước": "dimension",
+            # Khóa tiếng Anh
+            "line": "line",
+            "circle": "circle",
+            "arc": "arc",
+            "rectangle": "rectangle", "square": "square",
+            "polyline": "polyline",
+            "text": "text",
+            "dimension": "dimension",
             
         }
         
-        # 动作关键词映射
+        # Ánh xạ từ khóa hành động
         self.action_keywords = {
-            # 基本动作
-            "画": "draw", "绘制": "draw", "创建": "draw", "添加": "draw",
-            "修改": "modify", "调整": "modify", "改变": "modify",
-            "移动": "move", "旋转": "rotate", "缩放": "scale",
-            "放大": "scale_up", "缩小": "scale_down",
-            "删除": "erase", "擦除": "erase", "移除": "erase",
-            "保存": "save",
+            # Hành động cơ bản
+            "vẽ": "draw", "tạo": "draw", "thêm": "draw", "viết": "draw",
+            "sửa": "modify", "chỉnh sửa": "modify", "điều chỉnh": "modify", "thay đổi": "modify",
+            "di chuyển": "move", "xoay": "rotate", "thu phóng": "scale", "tỷ lệ": "scale",
+            "phóng to": "scale_up", "thu nhỏ": "scale_down",
+            "xóa": "erase", "gỡ bỏ": "erase", "loại bỏ": "erase",
+            "lưu": "save",
             
-            # 专业操作
-            "标注": "dimension",
-            "填充": "hatch",
-            "创建图层": "create_layer",
-            "切换图层": "change_layer"
+            # Thao tác chuyên môn
+            "ghi kích thước": "dimension", "đo kích thước": "dimension",
+            "tô mặt cắt": "hatch", "tô vùng": "hatch", "tô mẫu": "hatch", "hatch": "hatch",
+            "tạo lớp": "create_layer",
+            "chuyển lớp": "change_layer", "đổi lớp": "change_layer",
+            
+            # Khóa tiếng Anh
+            "draw": "draw", "create": "draw", "add": "draw",
+            "modify": "modify",
+            "move": "move", "rotate": "rotate", "scale": "scale",
+            "erase": "erase", "delete": "erase",
+            "save": "save",
+            "dimension": "dimension",
+            "create layer": "create_layer",
+            "change layer": "change_layer",
         }
     
       
-    # 坐标点匹配：(x,y,z) / (x,y) / x,y,z / x,y
-    # 提升为类属性以便复用：解析半径等数字参数前需要先剔除坐标部分，
-    # 否则圆心坐标会被误当作半径
+    # Khớp điểm tọa độ: (x,y,z) / (x,y) / x,y,z / x,y
+    # Đưa lên làm thuộc tính lớp để tái sử dụng: cần loại bỏ phần tọa độ trước khi phân tích tham số số như bán kính,
+    # nếu không tọa độ tâm đường tròn sẽ bị nhận nhầm làm bán kính
     _COORD_PATTERN = re.compile(
         r'\(?\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)(?:\s*,\s*(-?\d+\.?\d*))?\s*\)?')
 
     def color_to_index(self, color) -> Optional[int]:
-        """将颜色参数（名称或索引）转换为CAD颜色索引(ACI)
+        """Chuyển đổi tham số màu (tên hoặc chỉ số) thành chỉ số màu CAD (ACI)
 
-        支持中英文颜色名称及1-256的整数索引（256=ByLayer随层）。
-        无法识别时返回None（保持随层颜色）。
+        Hỗ trợ tên màu tiếng Việt, tiếng Anh và chỉ số nguyên từ 1-256 (256=ByLayer theo lớp).
+        Trả về None nếu không nhận diện được (giữ nguyên màu theo lớp).
         """
         if color is None:
             return None
@@ -113,11 +147,11 @@ class NLPProcessor:
             return color if 1 <= color <= 256 else None
         if isinstance(color, str):
             text = color.strip()
-            # 纯数字字符串按索引处理
+            # Xử lý chuỗi thuần số theo chỉ số
             if text.isdigit():
                 num = int(text)
                 return num if 1 <= num <= 256 else None
-            # 先精确匹配颜色名称，再忽略大小写匹配
+            # Khớp chính xác tên màu trước, sau đó khớp không phân biệt hoa thường
             if text in self.color_rgb_map:
                 return self.color_rgb_map[text]
             lower = text.lower()
@@ -127,7 +161,7 @@ class NLPProcessor:
         return None
 
     def extract_color_from_command(self, command: str) -> Optional[int]:
-        # 未提供颜色信息时返回None，保持实体的随层(ByLayer)颜色
+        # Trả về None khi không có thông tin màu sắc, giữ nguyên màu theo lớp (ByLayer) của thực thể
         if command is None:
             return None
 
@@ -138,48 +172,49 @@ class NLPProcessor:
         except:
             pass
 
-        # 将命令转换为小写
+        # Chuyển lệnh sang chữ thường
         command = command.lower()
         
-        # 尝试匹配颜色名称（长名称优先，避免"浅灰色"被"灰色"抢先命中）
+        # Thử khớp tên màu (ưu tiên tên dài hơn để tránh "xám" khớp trước "xám nhạt")
         for color_name in sorted(self.color_rgb_map.keys(), key=len, reverse=True):
             if color_name.lower() in command:
                 return self.color_rgb_map[color_name]
         
-        # 尝试匹配颜色描述（如"淡蓝色"）
-        color_pattern = r'([深浅淡]?[a-zA-Z\u4e00-\u9fa5]+色)'
+        # Thử khớp mô tả màu sắc (vd: "màu xám nhạt")
+        color_pattern = r'(?:màu\s+)?([a-zA-ZÀ-ỹ]+(?:\s+[a-zA-ZÀ-ỹ]+){0,2})'
         color_matches = re.findall(color_pattern, command)
         
         for color_match in color_matches:
-            # 检查是否是已知的颜色名称
-            if color_match in self.color_rgb_map:
-                return self.color_rgb_map[color_match]
+            # Kiểm tra xem có phải tên màu đã biết hay không
+            normalized = color_match.strip()
+            if normalized in self.color_rgb_map:
+                return self.color_rgb_map[normalized]
                     
-        # 找不到颜色信息时返回None（保持随层颜色，避免覆盖ByLayer语义）
+        # Trả về None khi không tìm thấy thông tin màu (giữ màu theo lớp, tránh ghi đè ngữ nghĩa ByLayer)
         return None
     
     def process_command(self, command: str) -> Dict[str, Any]:
-        """处理自然语言命令并返回结果"""
-        self.logger.info(f"处理命令: {command}")
+        """Xử lý lệnh ngôn ngữ tự nhiên và trả về kết quả"""
+        self.logger.info(f"Đang xử lý lệnh: {command}")
         
-        # 解析命令
+        # Phân tích lệnh
         parsed_command = self.parse_command(command)
       
-        # 返回解析结果
+        # Trả về kết quả phân tích
         return parsed_command
     
     def parse_command(self, command: str) -> Dict[str, Any]:
-        """解析自然语言命令并转换为CAD操作参数"""
-        self.logger.info(f"解析命令: {command}")
+        """Phân tích lệnh ngôn ngữ tự nhiên và chuyển đổi thành tham số thao tác CAD"""
+        self.logger.info(f"Đang phân tích lệnh: {command}")
         
-        # 将命令转换为小写并去除多余空格
+        # Chuyển lệnh sang chữ thường và loại bỏ khoảng trắng thừa
         command = command.lower().strip()
         
-        # 尝试识别命令类型
+        # Thử nhận diện loại lệnh
         command_type = self._identify_command_type(command)
-        self.logger.debug(f"识别到的命令类型: {command_type}")
+        self.logger.debug(f"Loại lệnh được nhận diện: {command_type}")
         
-        # 根据命令类型分发到不同的处理函数
+        # Điều phối đến hàm xử lý tương ứng theo loại lệnh
         if command_type == "draw_line":
             return self._parse_draw_line(command)
         elif command_type == "draw_circle":
@@ -201,28 +236,28 @@ class NLPProcessor:
         elif command_type == "save":
             return self._parse_save(command)
         else:
-            # 默认返回一个错误结果
+            # Mặc định trả về kết quả lỗi
             return {
                 "type": "unknown",
-                "error": "无法识别的命令类型",
+                "error": "Không thể nhận diện loại lệnh",
                 "original_command": command
             }
     
     def _identify_command_type(self, command: str) -> str:
-        """识别命令类型"""
-        # 检查操作类型
+        """Nhận diện loại lệnh"""
+        # Kiểm tra loại thao tác
         for action, action_type in self.action_keywords.items():
             if action in command:
-                # 基本形状处理
-                # 形状词必须按长度降序匹配（长词优先）：否则子串匹配会让"圆"
-                # 抢先命中"圆弧"，把"画一段圆弧"误识别为画圆
-                # （与 extract_color_from_command 中"浅灰色优先于灰色"同理）
+                # Xử lý hình dạng cơ bản
+                # Từ khóa hình dạng phải được khớp theo thứ tự độ dài giảm dần (ưu tiên từ dài hơn):
+                # nếu không, khớp chuỗi con sẽ khiến "tròn" khớp trước "cung tròn", nhận nhầm "vẽ một cung tròn" thành vẽ hình tròn
+                # (tương tự như ưu tiên "xám nhạt" trước "xám" trong extract_color_from_command)
                 for shape, shape_type in sorted(self.shape_keywords.items(),
                                                 key=lambda kv: len(kv[0]), reverse=True):
                     if shape in command:
-                        # "标注层"中的"标注"是图层名的组成部分（如"创建一个名为标注层的图层"），
-                        # 不能当作标注动作的形状词，否则会误识别为add_dimension
-                        if shape == "标注" and "标注层" in command:
+                        # "kích thước" trong "lớp kích thước" là một phần của tên lớp (vd: "tạo một lớp tên là lớp kích thước"),
+                        # không được xem là từ khóa hình dạng của thao tác ghi kích thước, nếu không sẽ nhận nhầm thành add_dimension
+                        if shape in ("kích thước", "ghi kích thước") and "lớp kích thước" in command:
                             continue
                         if action_type == "draw":
                             if shape_type == "line":
@@ -240,26 +275,28 @@ class NLPProcessor:
                             elif shape_type == "dimension":
                                 return "add_dimension"
         
-        # 检查是否是创建图层命令（动作词需与_parse_create_layer的识别范围保持一致）
-        if "图层" in command and any(action in command for action in ["创建", "新建", "添加", "建立", "生成"]):
+        # Kiểm tra xem có phải lệnh tạo lớp hay không (từ khóa hành động cần đồng bộ với phạm vi nhận diện của _parse_create_layer)
+        if any(kw in command for kw in ["lớp", "layer"]) and any(
+            action in command for action in ["tạo", "tạo mới", "thêm", "lập", "khởi tạo", "create", "new", "add"]
+        ):
             return "create_layer"
         
-        # 检查是否是标注命令
-        if "标注" in command:
+        # Kiểm tra xem có phải lệnh ghi kích thước hay không
+        if any(kw in command for kw in ["ghi kích thước", "kích thước", "dimension"]):
             return "add_dimension"
         
-        # 检查是否是填充命令（"填充"动作在动作循环中不会命中draw分支，需单独识别）
-        if "填充" in command:
+        # Kiểm tra xem có phải lệnh tô mặt cắt hay không (hành động tô vùng không khớp nhánh draw trong vòng lặp hành động nên cần nhận diện riêng)
+        if any(kw in command for kw in ["tô mặt cắt", "tô vùng", "tô mẫu", "hatch"]):
             return "draw_hatch"
         
-        if "保存" in command:
+        if any(kw in command for kw in ["lưu", "save"]):
             return "save"
         
-        # 如果无法识别，返回未知类型
+        # Nếu không thể nhận diện, trả về loại không xác định
         return "unknown"
     
     def _extract_coordinates(self, text: str) -> List[Tuple[float, float, float]]:
-        """从文本中提取坐标点"""
+        """Trích xuất các điểm tọa độ từ văn bản"""
         coordinates = []
         for match in self._COORD_PATTERN.finditer(text):
             x = float(match.group(1))
@@ -270,59 +307,59 @@ class NLPProcessor:
         return coordinates
     
     def _extract_numbers(self, text: str) -> List[float]:
-        """从文本中提取数字"""
+        """Trích xuất các con số từ văn bản"""
         pattern = r'(-?\d+\.?\d*)'
         matches = re.findall(pattern, text)
         return [float(match) for match in matches]
     
     def _parse_draw_line(self, command: str) -> Dict[str, Any]:
-        """解析绘制直线命令"""
-        # 尝试提取坐标
+        """Phân tích lệnh vẽ đường thẳng"""
+        # Thử trích xuất tọa độ
         coordinates = self._extract_coordinates(command)
         
         if len(coordinates) >= 2:
-            # 如果找到至少两个坐标点，使用前两个作为起点和终点
+            # Nếu tìm thấy ít nhất hai điểm tọa độ, dùng hai điểm đầu làm điểm đầu và điểm cuối
             return {
                 "type": "draw_line",
                 "start_point": coordinates[0],
                 "end_point": coordinates[1]
             }
         else:
-            # 如果没有找到足够的坐标点，尝试使用默认值
-            # 这里可以根据需要设置默认的起点和终点
+            # Nếu không tìm thấy đủ điểm tọa độ, thử dùng giá trị mặc định
+            # Có thể thiết lập điểm đầu và điểm cuối mặc định tại đây tùy nhu cầu
             return {
                 "type": "draw_line",
                 "start_point": (0, 0, 0),
                 "end_point": (100, 100, 0),
-                "note": "使用默认坐标，因为命令中未提供足够的坐标信息"
+                "note": "Sử dụng tọa độ mặc định vì lệnh không cung cấp đủ thông tin tọa độ"
             }
     
     def _parse_draw_circle(self, command: str) -> Dict[str, Any]:
-        """解析绘制圆命令"""
-        # 尝试提取坐标和半径
+        """Phân tích lệnh vẽ hình tròn"""
+        # Thử trích xuất tọa độ và bán kính
         coordinates = self._extract_coordinates(command)
-        # 剔除坐标部分再提取数字，避免把圆心坐标误当作半径
+        # Loại bỏ phần tọa độ trước khi trích xuất số để tránh nhận nhầm tọa độ tâm làm bán kính
         numbers = self._extract_numbers(self._COORD_PATTERN.sub(' ', command))
         
-        # 提取半径
+        # Trích xuất bán kính
         radius = None
-        radius_pattern = r'(?:半径|r|radius)[^\d]*?(-?\d+\.?\d*)'
+        radius_pattern = r'(?:bán kính|\br\b|radius)[^\d]*?(-?\d+\.?\d*)'
         radius_match = re.search(radius_pattern, command, re.IGNORECASE)
         if radius_match:
             radius = float(radius_match.group(1))
         elif len(numbers) > 0:
-            # 如果没有明确指定半径，使用找到的第一个数字作为半径
+            # Nếu không chỉ định rõ bán kính, dùng số đầu tiên tìm thấy làm bán kính
             radius = numbers[0]
         else:
-            # 默认半径
+            # Bán kính mặc định
             radius = 50.0
         
-        # 提取中心点
+        # Trích xuất điểm tâm
         center = None
         if len(coordinates) > 0:
             center = coordinates[0]
         else:
-            # 默认中心点
+            # Điểm tâm mặc định
             center = (0, 0, 0)
         
         return {
@@ -332,48 +369,48 @@ class NLPProcessor:
         }
     
     def _parse_draw_arc(self, command: str) -> Dict[str, Any]:
-        """解析绘制圆弧命令"""
-        # 尝试提取坐标、半径和角度
+        """Phân tích lệnh vẽ cung tròn"""
+        # Thử trích xuất tọa độ, bán kính và góc
         coordinates = self._extract_coordinates(command)
-        # 剔除坐标部分再提取数字，避免把圆心坐标误当作半径
+        # Loại bỏ phần tọa độ trước khi trích xuất số để tránh nhận nhầm tọa độ tâm làm bán kính
         numbers = self._extract_numbers(self._COORD_PATTERN.sub(' ', command))
         
-        # 提取中心点
+        # Trích xuất điểm tâm
         center = None
         if len(coordinates) > 0:
             center = coordinates[0]
         else:
-            # 默认中心点
+            # Điểm tâm mặc định
             center = (0, 0, 0)
         
-        # 提取半径
+        # Trích xuất bán kính
         radius = None
-        radius_pattern = r'(?:半径|r|radius)[^\d]*?(-?\d+\.?\d*)'
+        radius_pattern = r'(?:bán kính|\br\b|radius)[^\d]*?(-?\d+\.?\d*)'
         radius_match = re.search(radius_pattern, command, re.IGNORECASE)
         if radius_match:
             radius = float(radius_match.group(1))
         elif len(numbers) > 0:
-            # 如果没有明确指定半径，使用找到的第一个数字作为半径
+            # Nếu không chỉ định rõ bán kính, dùng số đầu tiên tìm thấy làm bán kính
             radius = numbers[0]
         else:
-            # 默认半径
+            # Bán kính mặc định
             radius = 50.0
         
-        # 提取起始角度和结束角度
+        # Trích xuất góc bắt đầu và góc kết thúc
         start_angle = 0.0
         end_angle = 90.0
         
-        start_angle_pattern = r'(?:起始角度|start angle)[^\d]*?(-?\d+\.?\d*)'
+        start_angle_pattern = r'(?:góc bắt đầu|góc đầu|start angle)[^\d]*?(-?\d+\.?\d*)'
         start_angle_match = re.search(start_angle_pattern, command, re.IGNORECASE)
         if start_angle_match:
             start_angle = float(start_angle_match.group(1))
         
-        end_angle_pattern = r'(?:结束角度|end angle)[^\d]*?(-?\d+\.?\d*)'
+        end_angle_pattern = r'(?:góc kết thúc|góc cuối|end angle)[^\d]*?(-?\d+\.?\d*)'
         end_angle_match = re.search(end_angle_pattern, command, re.IGNORECASE)
         if end_angle_match:
             end_angle = float(end_angle_match.group(1))
         
-        # 确保所有必要参数都有值
+        # Đảm bảo tất cả các tham số bắt buộc đều có giá trị
         if center is None:
             center = (0, 0, 0)
         if radius is None:
@@ -383,7 +420,7 @@ class NLPProcessor:
         if end_angle is None:
             end_angle = 90.0
             
-        self.logger.debug(f"解析圆弧命令结果: 中心点={center}, 半径={radius}, 起始角度={start_angle}, 结束角度={end_angle}")
+        self.logger.debug(f"Kết quả phân tích lệnh vẽ cung tròn: tâm={center}, bán kính={radius}, góc bắt đầu={start_angle}, góc kết thúc={end_angle}")
         
         return {
             "type": "draw_arc",
@@ -394,38 +431,38 @@ class NLPProcessor:
         }
     
     def _parse_draw_rectangle(self, command: str) -> Dict[str, Any]:
-        """解析绘制矩形命令"""
-        # 尝试提取坐标
+        """Phân tích lệnh vẽ hình chữ nhật"""
+        # Thử trích xuất tọa độ
         coordinates = self._extract_coordinates(command)
         
         if len(coordinates) >= 2:
-            # 如果找到至少两个坐标点，使用前两个作为对角点
+            # Nếu tìm thấy ít nhất hai điểm tọa độ, dùng hai điểm đầu làm hai góc đối diện
             return {
                 "type": "draw_rectangle",
                 "corner1": coordinates[0],
                 "corner2": coordinates[1]
             }
         else:
-            # 如果没有找到足够的坐标点，尝试提取宽度和高度
+            # Nếu không tìm thấy đủ điểm tọa độ, thử trích xuất chiều rộng và chiều cao
             width = 100.0
             height = 100.0
             
-            width_pattern = r'(?:宽度|width)[^\d]*?(-?\d+\.?\d*)'
+            width_pattern = r'(?:chiều rộng|rộng|width)[^\d]*?(-?\d+\.?\d*)'
             width_match = re.search(width_pattern, command, re.IGNORECASE)
             if width_match:
                 width = float(width_match.group(1))
             
-            height_pattern = r'(?:高度|height)[^\d]*?(-?\d+\.?\d*)'
+            height_pattern = r'(?:chiều cao|cao|chiều dài|dài|height)[^\d]*?(-?\d+\.?\d*)'
             height_match = re.search(height_pattern, command, re.IGNORECASE)
             if height_match:
                 height = float(height_match.group(1))
             
-            # 如果找到一个坐标点，使用它作为起点
+            # Nếu tìm thấy một điểm tọa độ, dùng nó làm điểm bắt đầu
             if len(coordinates) == 1:
                 corner1 = coordinates[0]
                 corner2 = (corner1[0] + width, corner1[1] + height, corner1[2])
             else:
-                # 默认起点和终点
+                # Điểm đầu và điểm cuối mặc định
                 corner1 = (0, 0, 0)
                 corner2 = (width, height, 0)
             
@@ -436,71 +473,71 @@ class NLPProcessor:
             }
     
     def _parse_draw_polyline(self, command: str) -> Dict[str, Any]:
-        """解析绘制多段线命令"""
-        # 尝试提取坐标
+        """Phân tích lệnh vẽ đa tuyến"""
+        # Thử trích xuất tọa độ
         coordinates = self._extract_coordinates(command)
         
-        # 检查是否需要闭合
-        closed = "闭合" in command or "封闭" in command
+        # Kiểm tra xem có cần khép kín hay không
+        closed = any(kw in command for kw in ["khép kín", "đóng kín", "kín", "closed"])
         
         if len(coordinates) >= 2:
-            # 如果找到至少两个坐标点，使用它们作为多段线的点
+            # Nếu tìm thấy ít nhất hai điểm tọa độ, dùng chúng làm các đỉnh của đa tuyến
             return {
                 "type": "draw_polyline",
                 "points": coordinates,
                 "closed": closed
             }
         else:
-            # 如果没有找到足够的坐标点，返回错误
+            # Nếu không tìm thấy đủ điểm tọa độ, trả về lỗi
             return {
                 "type": "error",
-                "message": "绘制多段线需要至少两个坐标点"
+                "message": "Vẽ đa tuyến cần ít nhất hai điểm tọa độ"
             }
     
     def _parse_draw_text(self, command: str) -> Dict[str, Any]:
-        """解析绘制文本命令"""
-        # 尝试提取坐标
+        """Phân tích lệnh vẽ văn bản"""
+        # Thử trích xuất tọa độ
         coordinates = self._extract_coordinates(command)
         
-        # 提取文本内容
-        # 注意必须用分组(?:...)而非字符类[...]——字符类会把"文本内容|text|内容"
-        # 拆成单字集合，匹配任意单字加冒号
-        text_pattern = r'(?:文本内容|text|内容)\s*[：:]\s*[\"\'](.*?)[\"\']'
+        # Trích xuất nội dung văn bản
+        # Lưu ý phải dùng nhóm (?:...) thay vì lớp ký tự [...] — lớp ký tự sẽ tách chuỗi thành tập ký tự đơn,
+        # khớp bất kỳ ký tự đơn nào kèm dấu hai chấm
+        text_pattern = r'(?:nội dung văn bản|nội dung|văn bản|text)\s*[:：]\s*[\"\'](.*?)[\"\']'
         text_match = re.search(text_pattern, command)
         
         text = ""
         if text_match:
             text = text_match.group(1)
         else:
-            # 尝试提取引号中的内容作为文本
+            # Thử trích xuất nội dung trong dấu ngoặc kép/đơn làm văn bản
             quote_pattern = r'[\"\'](.*?)[\"\']'
             quote_match = re.search(quote_pattern, command)
             if quote_match:
                 text = quote_match.group(1)
             else:
-                # 如果没有找到引号中的内容，使用默认文本
-                text = "示例文本"
+                # Nếu không tìm thấy nội dung trong dấu ngoặc, dùng văn bản mặc định
+                text = "Văn bản mẫu"
         
-        # 提取文本高度
-        height = 2.5  # 默认高度
-        height_pattern = r'(?:高度|height)[^\d]*?(-?\d+\.?\d*)'
+        # Trích xuất chiều cao chữ
+        height = 2.5  # Chiều cao mặc định
+        height_pattern = r'(?:chiều cao|cao|height)[^\d]*?(-?\d+\.?\d*)'
         height_match = re.search(height_pattern, command, re.IGNORECASE)
         if height_match:
             height = float(height_match.group(1))
         
-        # 提取旋转角度
-        rotation = 0.0  # 默认角度
-        rotation_pattern = r'(?:旋转|角度|rotation)[^\d]*?(-?\d+\.?\d*)'
+        # Trích xuất góc xoay
+        rotation = 0.0  # Góc mặc định
+        rotation_pattern = r'(?:góc xoay|xoay|góc|rotation)[^\d]*?(-?\d+\.?\d*)'
         rotation_match = re.search(rotation_pattern, command, re.IGNORECASE)
         if rotation_match:
             rotation = float(rotation_match.group(1))
         
-        # 提取插入点
+        # Trích xuất điểm chèn
         position = None
         if len(coordinates) > 0:
             position = coordinates[0]
         else:
-            # 默认插入点
+            # Điểm chèn mặc định
             position = (0, 0, 0)
         
         return {
@@ -512,15 +549,15 @@ class NLPProcessor:
         }
     
     def _parse_draw_hatch(self, command: str) -> Dict[str, Any]:
-        """解析绘制填充命令"""
-        # 尝试提取坐标点集
+        """Phân tích lệnh vẽ tô mặt cắt (hatch)"""
+        # Thử trích xuất tập điểm tọa độ
         coordinates = self._extract_coordinates(command)
         
-        # 提取填充图案名称
-        pattern_name = "SOLID"  # 默认为实体填充
+        # Trích xuất tên mẫu tô
+        pattern_name = "SOLID"  # Mặc định là tô đặc
         pattern_patterns = [
-            r'(?:图案|pattern)[^\w]*?["\'](.*?)["\']',
-            r'(?:图案|pattern)[^\w]*?(\w+)'
+            r'(?:mẫu tô|mẫu|hoa văn|pattern)[^\w]*?["\'](.*?)["\']',
+            r'(?:mẫu tô|mẫu|hoa văn|pattern)[^\w]*?(\w+)'
         ]
         
         for pattern in pattern_patterns:
@@ -529,16 +566,16 @@ class NLPProcessor:
                 pattern_name = pattern_match.group(1).upper()
                 break
         
-        # 提取填充比例
-        scale = 1.0  # 默认比例
-        scale_pattern = r'(?:比例|缩放|scale)[^\d]*?(\d+\.?\d*)'
+        # Trích xuất tỷ lệ tô
+        scale = 1.0  # Tỷ lệ mặc định
+        scale_pattern = r'(?:tỷ lệ|tỉ lệ|thu phóng|scale)[^\d]*?(\d+\.?\d*)'
         scale_match = re.search(scale_pattern, command, re.IGNORECASE)
         if scale_match:
             scale = float(scale_match.group(1))
         
-        # 检查是否有足够的点来定义填充边界
+        # Kiểm tra xem có đủ điểm để xác định biên vùng tô hay không
         if len(coordinates) >= 3:
-            self.logger.debug(f"解析填充命令结果: 点集={coordinates}, 图案={pattern_name}, 比例={scale}")
+            self.logger.debug(f"Kết quả phân tích lệnh tô mặt cắt: tập điểm={coordinates}, mẫu={pattern_name}, tỷ lệ={scale}")
             return {
                 "type": "draw_hatch",
                 "points": coordinates,
@@ -546,21 +583,21 @@ class NLPProcessor:
                 "scale": scale
             }
         else:
-            # 如果没有足够的点，返回错误信息
-            self.logger.warning("填充命令解析失败: 需要至少3个点来定义填充边界")
+            # Nếu không đủ điểm, trả về thông báo lỗi
+            self.logger.warning("Phân tích lệnh tô mặt cắt thất bại: cần ít nhất 3 điểm để xác định biên vùng tô")
             return {
                 "type": "error",
-                "message": "绘制填充需要至少3个点来定义边界"
+                "message": "Tô mặt cắt cần ít nhất 3 điểm để xác định biên"
             }
 
 
     def _parse_add_dimension(self, command: str) -> Dict[str, Any]:
-        """解析添加线性标注命令（取前两个坐标点作为标注起止点）"""
+        """Phân tích lệnh thêm ghi kích thước tuyến tính (lấy hai điểm tọa độ đầu làm điểm đầu và điểm cuối)"""
         coordinates = self._extract_coordinates(command)
         if len(coordinates) < 2:
             return {
                 "type": "error",
-                "message": "添加标注需要两个坐标点（起点和终点）"
+                "message": "Ghi kích thước cần hai điểm tọa độ (điểm đầu và điểm cuối)"
             }
         return {
             "type": "add_dimension",
@@ -569,47 +606,45 @@ class NLPProcessor:
         }
 
     def _parse_create_layer(self, command: str) -> Dict[str, Any]:
-        """解析创建图层命令
+        """Phân tích lệnh tạo lớp (layer)
 
-        兼容多种语序："名为WALL的图层"、"创建WALL图层"、"创建图层WALL"、
-        引号形式 "创建图层'墙体'"
+        Hỗ trợ nhiều trật tự từ: "tạo lớp tên là WALL", "tạo lớp WALL", "tạo WALL layer",
+        dạng ngoặc kép/đơn "tạo lớp 'Tường'"
         """
-        # 优先提取引号中的图层名称
+        # Ưu tiên trích xuất tên lớp trong dấu ngoặc kép/đơn
         quote_match = re.search(r'["\'](.*?)["\']', command)
         if quote_match:
             return {"type": "create_layer", "layer_name": quote_match.group(1)}
 
-        # "名为/叫做/名称为 X"——名称在关键字之后（如"创建一个名为WALL的图层"）
-        # 捕获组必须非贪婪并终止于"的/图层"之前，
-        # 否则贪婪匹配会把"WALL的图层"整体误当作图层名
-        # （"的"与"图层"之间允许一个"新"字："叫做结构层的新图层"）
-        m = re.search(r'(?:名为|叫做|名称为|命名为)\s*([\w\u4e00-\u9fa5-]+?)(?=\s*(?:的)?(?:新)?图层|\s*$)', command)
+        # "tên là / có tên / mang tên / đặt tên là X" — tên nằm sau từ khóa (vd: "tạo một lớp tên là WALL")
+        # Nhóm bắt phải không tham lam và dừng trước "lớp/layer" hoặc cuối chuỗi
+        m = re.search(r'(?:có\s+tên\s+là|đặt\s+tên\s+là|mang\s+tên|tên\s+là|tên|named)\s*[:：]?\s*([\wÀ-ỹ-]+?)(?=\s*(?:lớp|layer)|\s*$)', command)
         if m:
             return {"type": "create_layer", "layer_name": m.group(1)}
 
-        # "X图层"——名称直接位于"图层"之前（如"创建墙体图层"）
-        m = re.search(r'(?:创建|新建|添加|建立|生成)\s*(?:一个|一个新|新的)?\s*([\w\u4e00-\u9fa5-]+)\s*(?:的)?\s*(?:新)?图层', command)
+        # "lớp X" hoặc "layer X" — tên nằm ngay sau "lớp" / "layer" (vd: "tạo lớp WALL", "tạo lớp mới Tường")
+        m = re.search(r'(?:lớp|layer)\s*(?:mới\s+)?(?:tên\s+là|tên|:|：)?\s*([\wÀ-ỹ-]+)', command)
         if m:
             return {"type": "create_layer", "layer_name": m.group(1)}
 
-        # "图层X"——名称位于"图层"之后（如"创建图层WALL"）
-        m = re.search(r'图层\s*(?:名为|叫做|名称为|:|：)?\s*([\w\u4e00-\u9fa5-]+)', command)
+        # "tạo X lớp/layer" — tên nằm ngay trước "lớp" / "layer" (vd: "create WALL layer")
+        m = re.search(r'(?:tạo|tạo mới|thêm|lập|khởi tạo|create|new|add)\s*(?:một\s+|a\s+)?(?:mới\s+|new\s+)?([\wÀ-ỹ-]+)\s*(?:lớp|layer)', command)
         if m:
             return {"type": "create_layer", "layer_name": m.group(1)}
 
-        # 未识别出图层名称
+        # Không nhận diện được tên lớp
         return {"type": "create_layer", "layer_name": None}
 
     def _parse_save(self, command: str) -> Dict[str, Any]:
-        """解析保存命令"""
-        # 尝试提取文件路径
-        path_pattern = r'(?:路径|保存到|path)[^\w]*?[\"\'](.*?)[\"\']'
+        """Phân tích lệnh lưu bản vẽ"""
+        # Thử trích xuất đường dẫn tệp
+        path_pattern = r'(?:đường dẫn|lưu tại|lưu vào|lưu đến|path)[^\w]*?[\"\'](.*?)[\"\']'
         path_match = re.search(path_pattern, command, re.IGNORECASE)
         
         if path_match:
             file_path = path_match.group(1)
         else:
-            # 默认文件路径
+            # Đường dẫn tệp mặc định
             file_path = os.path.join(config["output"]["directory"], config["output"]["default_filename"])
         
         return {

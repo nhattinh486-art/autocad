@@ -1,6 +1,6 @@
 # CAD-MCP Server (CAD Model Context Protocol Server)
 
-[English](/README_en.md) | [中文](/README_zh.md) | [ไทย](/README_th.md)
+[Tiếng Việt](../README.md) | [English](./README_en.md)
 
 ## Project Introduction
 
@@ -79,7 +79,7 @@ The configuration file is located at `src/config.json` and contains the followin
 ```json
 {
     "server": {
-        "name": "CAD MCP 服务器",
+        "name": "Máy chủ CAD MCP",
         "version": "2.0.0",
         "transport": "stdio",
         "host": "127.0.0.1",

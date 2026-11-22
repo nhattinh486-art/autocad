@@ -1,19 +1,19 @@
 """
-CAD MCP 服务包
+Gói dịch vụ CAD MCP
 """
 
 import logging
 
-# 注意：此处绝不能调用 logging.basicConfig——
-# 包方式运行（cad-mcp入口导入src.server）时本模块先于server.py执行，
-# basicConfig会抢先给root logger装上默认StreamHandler，
-# 导致server.py中的日志配置（含FileHandler）被静默忽略
-# （basicConfig在root已有handler时不生效），cad_mcp.log将永远为空。
-# 日志配置统一由 server.py 入口完成。
+# Lưu ý: tuyệt đối không gọi logging.basicConfig ở đây —
+# Khi chạy theo dạng package (cổng vào cad-mcp nhập src.server), module này chạy trước server.py,
+# basicConfig sẽ gắn trước StreamHandler mặc định cho root logger,
+# khiến cấu hình log trong server.py (gồm FileHandler) bị bỏ qua âm thầm
+# (basicConfig không có tác dụng khi root đã có handler) và cad_mcp.log sẽ luôn trống.
+# Cấu hình log được thực hiện thống nhất tại điểm vào server.py.
 
 logger = logging.getLogger('cad_mcp')
 
-# 统一使用 config.py 的配置单例（含加载失败时的默认配置兜底）
+# Dùng thống nhất singleton cấu hình từ config.py (có cấu hình mặc định dự phòng khi tải lỗi)
 try:
     from .config import get_config
     config = get_config()

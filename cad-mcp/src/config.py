@@ -1,7 +1,7 @@
-"""配置加载模块：全局单例
+"""Module nạp cấu hình: singleton toàn cục
 
-此前 config.json 在 server.py / cad_controller.py / nlp_processor.py 三处被重复读取，
-现统一收敛到本模块，整个进程只加载一次配置。
+Trước đây config.json bị đọc lặp lại ở ba nơi server.py / cad_controller.py / nlp_processor.py,
+nay được gom về module này để toàn bộ tiến trình chỉ nạp cấu hình một lần duy nhất.
 """
 
 import json
@@ -11,13 +11,13 @@ from functools import lru_cache
 
 logger = logging.getLogger('cad_mcp_config')
 
-# 配置文件与本模块位于同一目录
+# Tệp cấu hình nằm cùng thư mục với module này
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.json')
 
-# 默认配置（配置文件缺失或损坏时的兜底，与旧版 __init__.py 行为一致）
+# Cấu hình mặc định (dự phòng khi tệp cấu hình bị thiếu hoặc hỏng, giữ nguyên hành vi __init__.py cũ)
 _DEFAULT_CONFIG = {
     "server": {
-        "name": "CAD MCP Server",
+        "name": "Máy chủ CAD MCP",
         "version": "2.0.0",
         "transport": "stdio",
         "host": "127.0.0.1",
@@ -37,12 +37,12 @@ _DEFAULT_CONFIG = {
 
 @lru_cache(maxsize=1)
 def get_config() -> dict:
-    """加载并缓存配置文件（进程内单例）"""
+    """Nạp và lưu đệm tệp cấu hình (singleton trong tiến trình)"""
     try:
         with open(_CONFIG_PATH, 'r', encoding='utf-8') as f:
             config = json.load(f)
-        logger.info("配置文件加载成功")
+        logger.info("Nạp tệp cấu hình thành công")
         return config
     except Exception as e:
-        logger.error(f"加载配置文件失败: {str(e)}，使用默认配置")
+        logger.error(f"Nạp tệp cấu hình thất bại: {str(e)}, sử dụng cấu hình mặc định")
         return _DEFAULT_CONFIG

@@ -1,8 +1,8 @@
-"""工具结构化输出模型（MCP Structured Output，2025-06-18 规范）
+"""Mô hình đầu ra có cấu trúc của công cụ (MCP Structured Output, chuẩn 2025-06-18)
 
-所有工具统一返回 Pydantic 模型，FastMCP 会据此自动生成 outputSchema，
-客户端（Claude / Cursor 等）可直接获得结构化的 structuredContent，
-而不是此前难以解析的 COM 对象字符串。
+Mọi công cụ đều trả về thống nhất theo mô hình Pydantic, FastMCP sẽ tự động tạo outputSchema,
+giúp ứng dụng khách (Antigravity / Claude / Cursor...) nhận trực tiếp structuredContent có cấu trúc,
+thay vì chuỗi đối tượng COM khó phân tích như trước đây.
 """
 
 from typing import Any, Dict, List, Optional
@@ -11,75 +11,75 @@ from pydantic import BaseModel, Field
 
 
 class ToolResult(BaseModel):
-    """通用工具执行结果"""
-    success: bool = Field(description="执行是否成功")
-    message: str = Field(description="人类可读的结果说明")
+    """Kết quả thực thi công cụ chung"""
+    success: bool = Field(description="Thực thi có thành công hay không")
+    message: str = Field(description="Thông báo kết quả dễ đọc cho người dùng")
     entity_handles: List[str] = Field(
         default_factory=list,
-        description="本次操作涉及/产生的实体句柄列表，可用于后续编辑或查询"
+        description="Danh sách handle thực thể liên quan/được tạo ra, dùng để chỉnh sửa hoặc truy vấn tiếp"
     )
-    error: Optional[str] = Field(default=None, description="失败时的错误信息")
+    error: Optional[str] = Field(default=None, description="Thông tin lỗi khi thất bại")
 
 
 class EntityInfo(BaseModel):
-    """实体概要信息"""
-    handle: str = Field(description="实体句柄（CAD内唯一标识）")
-    entity_type: str = Field(description="实体类型（line/circle/arc等）")
-    layer: Optional[str] = Field(default=None, description="所在图层名称")
-    color: Optional[int] = Field(default=None, description="颜色索引（ACI）")
+    """Thông tin tóm tắt của thực thể"""
+    handle: str = Field(description="Handle thực thể (định danh duy nhất trong CAD)")
+    entity_type: str = Field(description="Loại thực thể (line/circle/arc...)")
+    layer: Optional[str] = Field(default=None, description="Tên lớp (layer) chứa thực thể")
+    color: Optional[int] = Field(default=None, description="Chỉ số màu (ACI)")
 
 
 class ListEntitiesResult(BaseModel):
-    """实体列表查询结果"""
-    success: bool = Field(description="查询是否成功")
-    message: str = Field(description="结果说明")
-    total: int = Field(default=0, description="模型空间实体总数")
-    returned: int = Field(default=0, description="本次实际返回的实体数量（受limit限制）")
-    entities: List[EntityInfo] = Field(default_factory=list, description="实体列表")
+    """Kết quả truy vấn danh sách thực thể"""
+    success: bool = Field(description="Truy vấn có thành công hay không")
+    message: str = Field(description="Mô tả kết quả")
+    total: int = Field(default=0, description="Tổng số thực thể trong không gian mô hình (Model Space)")
+    returned: int = Field(default=0, description="Số lượng thực thể thực tế trả về (giới hạn bởi limit)")
+    entities: List[EntityInfo] = Field(default_factory=list, description="Danh sách thực thể")
 
 
 class LayerInfo(BaseModel):
-    """图层信息"""
-    name: str = Field(description="图层名称")
-    color: Optional[int] = Field(default=None, description="图层颜色索引（ACI）")
-    is_current: bool = Field(default=False, description="是否为当前图层")
-    is_frozen: bool = Field(default=False, description="是否冻结")
-    is_locked: bool = Field(default=False, description="是否锁定")
-    is_on: bool = Field(default=True, description="是否打开（可见）")
+    """Thông tin lớp (layer)"""
+    name: str = Field(description="Tên lớp")
+    color: Optional[int] = Field(default=None, description="Chỉ số màu của lớp (ACI)")
+    is_current: bool = Field(default=False, description="Có phải là lớp hiện hành hay không")
+    is_frozen: bool = Field(default=False, description="Có đang bị đóng băng (frozen) hay không")
+    is_locked: bool = Field(default=False, description="Có đang bị khóa (locked) hay không")
+    is_on: bool = Field(default=True, description="Có đang bật hiển thị hay không")
 
 
 class ListLayersResult(BaseModel):
-    """图层列表查询结果"""
-    success: bool = Field(description="查询是否成功")
-    message: str = Field(description="结果说明")
-    layers: List[LayerInfo] = Field(default_factory=list, description="图层列表")
+    """Kết quả truy vấn danh sách lớp"""
+    success: bool = Field(description="Truy vấn có thành công hay không")
+    message: str = Field(description="Mô tả kết quả")
+    layers: List[LayerInfo] = Field(default_factory=list, description="Danh sách lớp")
 
 
 class EntityPropertiesResult(BaseModel):
-    """实体详细属性查询结果"""
-    success: bool = Field(description="查询是否成功")
-    message: str = Field(description="结果说明")
-    handle: str = Field(default="", description="实体句柄")
-    entity_type: str = Field(default="", description="实体类型")
-    layer: Optional[str] = Field(default=None, description="所在图层")
-    color: Optional[int] = Field(default=None, description="颜色索引（ACI）")
-    linetype: Optional[str] = Field(default=None, description="线型名称")
-    lineweight: Optional[int] = Field(default=None, description="线宽")
+    """Kết quả truy vấn thuộc tính chi tiết của thực thể"""
+    success: bool = Field(description="Truy vấn có thành công hay không")
+    message: str = Field(description="Mô tả kết quả")
+    handle: str = Field(default="", description="Handle thực thể")
+    entity_type: str = Field(default="", description="Loại thực thể")
+    layer: Optional[str] = Field(default=None, description="Lớp chứa thực thể")
+    color: Optional[int] = Field(default=None, description="Chỉ số màu (ACI)")
+    linetype: Optional[str] = Field(default=None, description="Tên kiểu nét")
+    lineweight: Optional[int] = Field(default=None, description="Độ dày nét")
     properties: Dict[str, Any] = Field(
         default_factory=dict,
-        description="按实体类型而异的几何属性（坐标/半径/文本内容等）"
+        description="Thuộc tính hình học riêng theo từng loại thực thể (tọa độ/bán kính/nội dung chữ...)"
     )
-    error: Optional[str] = Field(default=None, description="失败时的错误信息")
+    error: Optional[str] = Field(default=None, description="Thông tin lỗi khi thất bại")
 
 
 class BlockInfo(BaseModel):
-    """图块信息"""
-    name: str = Field(description="图块名称")
-    entity_count: int = Field(default=0, description="图块内实体数量")
+    """Thông tin khối (block)"""
+    name: str = Field(description="Tên khối")
+    entity_count: int = Field(default=0, description="Số lượng thực thể bên trong khối")
 
 
 class ListBlocksResult(BaseModel):
-    """图块列表查询结果"""
-    success: bool = Field(description="查询是否成功")
-    message: str = Field(description="结果说明")
-    blocks: List[BlockInfo] = Field(default_factory=list, description="图块列表")
+    """Kết quả truy vấn danh sách khối"""
+    success: bool = Field(description="Truy vấn có thành công hay không")
+    message: str = Field(description="Mô tả kết quả")
+    blocks: List[BlockInfo] = Field(default_factory=list, description="Danh sách khối")

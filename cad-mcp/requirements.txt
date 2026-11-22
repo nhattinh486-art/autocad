@@ -1,4 +1,4 @@
-mcp>=1.12,<2       # MCP Python SDK：FastMCP、结构化输出、Streamable HTTP
-pywin32>=306       # Windows COM接口支持
-pydantic>=2.0.0    # 数据校验
-Pillow>=10.0.0     # 截图预览PNG编码
+mcp>=1.12,<2       # MCP Python SDK: FastMCP, đầu ra có cấu trúc, Streamable HTTP
+pywin32>=306       # Hỗ trợ giao diện Windows COM
+pydantic>=2.0.0    # Kiểm tra hợp lệ dữ liệu
+Pillow>=10.0.0     # Mã hóa ảnh PNG xem trước ảnh chụp màn hình

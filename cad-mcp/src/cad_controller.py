@@ -10,7 +10,7 @@ import concurrent.futures
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-# 统一使用配置单例（替代此前各模块重复读取 config.json）
+# Thống nhất sử dụng singleton cấu hình (thay thế việc các module tự đọc lại config.json trước đây)
 try:
     from .config import get_config
 except ImportError:
@@ -20,53 +20,53 @@ config = get_config()
 
 try:
     import win32com.client
-    # pythoncom是pywin32的一部分，不需要单独安装
+    # pythoncom là một phần của pywin32, không cần cài đặt riêng
     import pythoncom
 except ImportError:
-    logging.error("无法导入win32com.client或pythoncom，请确保已安装pywin32库")
+    logging.error("Không thể import win32com.client hoặc pythoncom, vui lòng đảm bảo đã cài đặt thư viện pywin32")
     raise
 
 try:
     import anyio
 except ImportError:
-    # anyio 是 mcp SDK 的依赖，正常情况下随 mcp 一起安装
+    # anyio là dependency của mcp SDK, bình thường sẽ được cài đặt cùng mcp
     anyio = None
 
 logger = logging.getLogger('cad_controller')
 
-# COM 瞬态错误：调用被忙碌的CAD拒绝（RPC_E_CALL_REJECTED）——
-# CAD正在执行命令/弹窗/重生成时会短暂拒绝COM调用，稍后重试即可恢复
+# Lỗi COM tạm thời: lời gọi bị CAD đang bận từ chối (RPC_E_CALL_REJECTED) —
+# Khi CAD đang thực thi lệnh/hiển thị hộp thoại/tái tạo (regen) sẽ tạm thời từ chối lời gọi COM, thử lại sau là có thể phục hồi
 _RPC_E_CALL_REJECTED = -2147418111
 
-# AutoCAD 瞬态保存错误（"保存文档时出错"）——
-# 保存/打开/关闭等操作进行中再调用SaveAs会报此错，稍后重试即可恢复
+# Lỗi lưu tạm thời của AutoCAD ("Lỗi khi lưu tài liệu") —
+# Gọi SaveAs khi đang lưu/mở/đóng sẽ báo lỗi này, thử lại sau là có thể phục hồi
 _ACAD_SAVE_TRANSIENT = -2145320861
 
-# COM 死引用错误：CAD进程已被用户关闭/崩溃，持有的接口指针失效
-# RPC_E_DISCONNECTED(-2147417848)：对象已与客户端断开连接
-# RPC_S_SERVER_UNAVAILABLE(-2147023174)：RPC服务器不可用
-# 与瞬态错误不同，这类错误重试无意义，应重置连接状态让后续操作重连
+# Lỗi tham chiếu COM chết: tiến trình CAD đã bị người dùng đóng/treo, con trỏ interface đang giữ không còn hợp lệ
+# RPC_E_DISCONNECTED(-2147417848): đối tượng đã ngắt kết nối với client
+# RPC_S_SERVER_UNAVAILABLE(-2147023174): máy chủ RPC không khả dụng
+# Khác với lỗi tạm thời, thử lại loại lỗi này là vô nghĩa, cần đặt lại trạng thái kết nối để thao tác sau kết nối lại
 _DEAD_COM_HRESULTS = (-2147417848, -2147023174)
 
 
 def _is_retryable_com_error(e) -> bool:
-    """判断是否为可重试的COM瞬态错误（忙碌被拒或保存冲突）"""
+    """Kiểm tra xem có phải lỗi COM tạm thời có thể thử lại không (bị từ chối do bận hoặc xung đột khi lưu)"""
     if getattr(e, "hresult", None) == _RPC_E_CALL_REJECTED:
         return True
-    # 瞬态保存错误藏在com_error的excepinfo元组里
+    # Lỗi lưu tạm thời nằm trong tuple excepinfo của com_error
     info = tuple(getattr(e, "excepinfo", None) or ())
     return _ACAD_SAVE_TRANSIENT in info
 
 
 def _is_retryable_attr_error(e, retry_attr) -> bool:
-    """判断是否为pywin32动态派发把"成员查找被拒"转换成的AttributeError
+    """Kiểm tra xem có phải AttributeError do dynamic dispatch của pywin32 chuyển đổi từ "tìm kiếm thành viên bị từ chối" hay không
 
-    动态派发下成员查找(GetIDsOfNames)被忙碌的CAD拒绝时，pywin32会吞掉
-    com_error并抛出AttributeError，hresult随之丢失（曾导致打开文档后立即
-    关闭报"Open.Close"且调用级重试完全失效）。已知两种消息格式：
-    dynamic.py抛出"Open.Close"；client/__init__.py抛出
-    "'<COMObject Open>' object has no attribute 'Close'"。
-    未指定成员名时一律不重试。
+    Trong dynamic dispatch, khi việc tìm kiếm thành viên (GetIDsOfNames) bị CAD đang bận từ chối,
+    pywin32 sẽ nuốt com_error và ném ra AttributeError, làm mất hresult (từng gây lỗi "Open.Close"
+    khi đóng ngay sau khi mở tài liệu và khiến cơ chế thử lại cấp lời gọi hoàn toàn vô hiệu).
+    Hai định dạng thông báo đã biết: dynamic.py ném "Open.Close"; client/__init__.py ném
+    "'<COMObject Open>' object has no attribute 'Close'".
+    Không bao giờ thử lại nếu không chỉ định tên thành viên.
     """
     if not retry_attr or not isinstance(e, AttributeError):
         return False
@@ -75,43 +75,43 @@ def _is_retryable_attr_error(e, retry_attr) -> bool:
 
 
 def _call_with_com_retry(fn, args, kwargs, retries: int = 20, delay: float = 0.5, retry_attr: str = None):
-    """执行COM调用，忙碌(RPC_E_CALL_REJECTED)或瞬态保存冲突时自动重试
+    """Thực thi lời gọi COM, tự động thử lại khi bận (RPC_E_CALL_REJECTED) hoặc xung đột lưu tạm thời
 
-    总等待时间上限约 retries*delay 秒，超过后抛出原始异常。
-    retry_attr 见 _is_retryable_attr_error 的说明。
+    Tổng thời gian chờ tối đa khoảng retries*delay giây, vượt quá sẽ ném ngoại lệ gốc.
+    Xem mô tả của _is_retryable_attr_error về retry_attr.
     """
     for attempt in range(retries):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
-            # 仅对瞬态错误重试（COM忙碌/保存冲突/成员查找被拒），其他异常直接抛出
+            # Chỉ thử lại với lỗi tạm thời (COM bận/xung đột lưu/tìm kiếm thành viên bị từ chối), các ngoại lệ khác ném thẳng
             if (_is_retryable_com_error(e) or _is_retryable_attr_error(e, retry_attr)) \
                     and attempt < retries - 1:
-                logger.debug(f"CAD忙碌或保存冲突，COM调用被拒，第{attempt + 1}次重试...")
+                logger.debug(f"CAD đang bận hoặc xung đột khi lưu, lời gọi COM bị từ chối, thử lại lần thứ {attempt + 1}...")
                 time.sleep(delay)
                 continue
             raise
-    raise RuntimeError("unreachable")  # 逻辑上不可达，仅为类型完整
+    raise RuntimeError("unreachable")  # Về mặt logic không thể chạm tới, chỉ để đảm bảo kiểu trả về đầy đủ
 
 
 def _print_window(hwnd):
-    """用PrintWindow截取窗口（无需前台、不受遮挡），失败或全黑返回None"""
+    """Dùng PrintWindow để chụp cửa sổ (không cần đưa lên foreground, không bị che khuất), trả về None nếu thất bại hoặc đen hoàn toàn"""
     import ctypes
     import win32gui
     import win32ui
     from PIL import Image
 
     user32 = ctypes.windll.user32
-    # 显式声明 PrintWindow 的参数类型：ctypes 默认把 Python int 当 32 位 C int 传，
-    # 句柄值超过 2^31-1 会抛 OverflowError，而该异常会被上层 except 吞掉并
-    # 静默退回旧的屏幕截取（正好是这个函数要规避的行为）。
+    # Khai báo tường minh kiểu tham số của PrintWindow: ctypes mặc định truyền Python int như C int 32-bit,
+    # giá trị handle vượt quá 2^31-1 sẽ ném OverflowError, mà ngoại lệ đó lại bị except tầng trên nuốt mất
+    # và âm thầm quay về chụp màn hình cũ (chính là hành vi hàm này muốn tránh).
     try:
         from ctypes import wintypes
         user32.PrintWindow.argtypes = [wintypes.HWND, wintypes.HDC, wintypes.UINT]
         user32.PrintWindow.restype = wintypes.BOOL
     except Exception:
         pass
-    # 线程级感知DPI：否则缩放屏上GetWindowRect返回逻辑坐标，位图尺寸不对
+    # Nhận thức DPI cấp luồng: nếu không, trên màn hình có scale, GetWindowRect sẽ trả về tọa độ logic khiến kích thước bitmap bị sai
     old_ctx = None
     try:
         user32.SetThreadDpiAwarenessContext.restype = ctypes.c_void_p
@@ -130,13 +130,13 @@ def _print_window(hwnd):
         bmp = win32ui.CreateBitmap()
         bmp.CreateCompatibleBitmap(mfc_dc, w, h)
         save_dc.SelectObject(bmp)
-        # 2 = PW_RENDERFULLCONTENT，含DirectX绘制的图形区
+        # 2 = PW_RENDERFULLCONTENT, bao gồm vùng đồ họa vẽ bằng DirectX
         if not user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 2):
             return None
         info = bmp.GetInfo()
         img = Image.frombuffer("RGB", (info["bmWidth"], info["bmHeight"]),
                                bmp.GetBitmapBits(True), "raw", "BGRX", 0, 1)
-        # 全黑说明窗口没有真正绘制，交给屏幕截取
+        # Đen hoàn toàn nghĩa là cửa sổ chưa thực sự vẽ nội dung, chuyển sang chụp màn hình
         if img.convert("L").getextrema()[1] == 0:
             return None
         return img
@@ -157,14 +157,14 @@ def _print_window(hwnd):
 
 
 class COMExecutor:
-    """专用COM线程执行器
+    """Bộ thực thi luồng COM chuyên dụng
 
-    Windows COM 的套间(Apartment)模型要求：同一接口指针应在创建它的线程上使用，
-    跨线程直接访问会导致调用失败甚至进程崩溃。本执行器将所有 COM 调用串行化到
-    单一 STA 线程上执行，带来两个好处：
-    1. 线程安全——多个工具并发调用也不会出现跨套间访问；
-    2. 不阻塞 asyncio 事件循环——COM 的阻塞调用（如等待 CAD 启动20秒）
-       全部发生在专用线程上，服务器仍能响应其他请求。
+    Mô hình Apartment của Windows COM yêu cầu: cùng một con trỏ interface phải được dùng trên
+    luồng đã tạo ra nó; truy cập trực tiếp xuyên luồng sẽ gây lỗi lời gọi hoặc thậm chí crash tiến trình.
+    Bộ thực thi này tuần tự hóa tất cả lời gọi COM vào một luồng STA duy nhất, mang lại hai lợi ích:
+    1. An toàn luồng — nhiều công cụ gọi đồng thời cũng không xảy ra truy cập xuyên apartment;
+    2. Không chặn vòng lặp sự kiện asyncio — các lời gọi COM có tính chặn (như chờ CAD khởi động 20 giây)
+       đều diễn ra trên luồng chuyên dụng, máy chủ vẫn có thể phản hồi các yêu cầu khác.
     """
 
     def __init__(self):
@@ -173,13 +173,13 @@ class COMExecutor:
         self._thread.start()
 
     def _worker(self) -> None:
-        """COM 线程主循环：初始化 COM 后不断从队列取任务执行"""
-        # 整个进程生命周期内只初始化一次，不调用 CoUninitialize（保持套间存活）
+        """Vòng lặp chính của luồng COM: sau khi khởi tạo COM sẽ liên tục lấy tác vụ từ hàng đợi để thực thi"""
+        # Chỉ khởi tạo một lần trong suốt vòng đời tiến trình, không gọi CoUninitialize (giữ apartment tồn tại)
         pythoncom.CoInitialize()
         while True:
             fn, args, kwargs, future = self._queue.get()
             if fn is None:
-                # 停止信号
+                # Tín hiệu dừng
                 future.set_result(True)
                 break
             try:
@@ -190,76 +190,76 @@ class COMExecutor:
                 self._queue.task_done()
 
     def submit(self, fn, *args, **kwargs):
-        """在COM线程上同步执行 fn 并返回其结果（阻塞当前调用线程）"""
+        """Thực thi đồng bộ fn trên luồng COM và trả về kết quả (chặn luồng đang gọi)"""
         if threading.current_thread() is self._thread:
-            # 已在COM线程上（内部嵌套调用），直接执行避免死锁
+            # Đã ở trên luồng COM (lời gọi lồng nhau nội bộ), thực thi trực tiếp để tránh deadlock
             return fn(*args, **kwargs)
         future = concurrent.futures.Future()
         self._queue.put((fn, args, kwargs, future))
         return future.result()
 
     async def run(self, fn, *args, **kwargs):
-        """异步执行 COM 调用：把阻塞的 submit 放到线程池，避免阻塞事件循环"""
+        """Thực thi bất đồng bộ lời gọi COM: đưa submit có tính chặn vào thread pool để tránh chặn event loop"""
         if anyio is None:
-            # 无 anyio 时退化为同步执行（不应发生）
+            # Quay về thực thi đồng bộ khi không có anyio (không nên xảy ra)
             return self.submit(fn, *args, **kwargs)
         return await anyio.to_thread.run_sync(lambda: self.submit(fn, *args, **kwargs))
 
 
 class CADController:
-    """CAD控制器类，负责与CAD应用程序交互"""
+    """Lớp điều khiển CAD, chịu trách nhiệm tương tác với ứng dụng CAD"""
 
     def __init__(self):
-        """初始化CAD控制器"""
+        """Khởi tạo bộ điều khiển CAD"""
         self.app = None
         self.doc = None
-        self.entities = {}  # 存储已创建图形的实体引用，用于后续修改
-        # 专用COM线程执行器：所有COM调用经由它串行执行
+        self.entities = {}  # Lưu tham chiếu thực thể của các hình đã tạo để chỉnh sửa về sau
+        # Bộ thực thi luồng COM chuyên dụng: mọi lời gọi COM đều được thực thi tuần tự qua đây
         self.executor = COMExecutor()
-        # 从配置文件加载参数
+        # Tải tham số từ tệp cấu hình
         self.startup_wait_time = config["cad"]["startup_wait_time"]
         self.command_delay = config["cad"]["command_delay"]
-        # 获取CAD类型
+        # Lấy loại CAD
         self.cad_type = config["cad"]["type"]
-        # 最近一次连接失败的原因（ProgID、HRESULT等），供上层提示用户排查
+        # Lý do thất bại kết nối gần nhất (ProgID, HRESULT, v.v.), để tầng trên gợi ý người dùng kiểm tra
         self.last_connect_error = ""
-        # 有效的线宽值列表
+        # Danh sách các giá trị độ dày nét hợp lệ
         self.valid_lineweights = [0, 5, 9, 13, 15, 18, 20, 25, 30, 35, 40, 50, 53, 60, 70, 80, 90, 100, 106, 120, 140, 158, 200, 211]
-        logger.info("CAD控制器已初始化")
+        logger.info("Bộ điều khiển CAD đã được khởi tạo")
 
     def _get_app_info(self) -> Tuple[List[str], str]:
-        """根据配置的CAD类型返回 (候选COM ProgID列表, 显示名称)
+        """Trả về (danh sách COM ProgID ứng viên, tên hiển thị) theo loại CAD đã cấu hình
 
-        注意：COM 的 ProgID 查找不区分大小写，GCAD.Application 与 Gcad.Application 等价。
-        同一CAD不同年代版本注册的ProgID可能不同（如浩辰有GCAD/GstarCAD两种），
-        返回候选列表由 start_cad 依次尝试，避免目标机器只注册了另一种时连不上。
+        Lưu ý: Việc tra cứu ProgID của COM không phân biệt hoa thường, GCAD.Application tương đương Gcad.Application.
+        Các phiên bản khác nhau của cùng một phần mềm CAD có thể đăng ký ProgID khác nhau (như GstarCAD có cả GCAD và GstarCAD),
+        trả về danh sách ứng viên để start_cad thử lần lượt, tránh trường hợp máy đích chỉ đăng ký một trong hai nên không kết nối được.
 
-        AutoCAD 的 ProgID 是按版本族硬绑定的：每个 ProgID 对应各自的 CLSID，
-        GetActiveObject 走的是"ProgID → CLSID → 运行对象表"，所以不带版本的
-        AutoCAD.Application 只能连上 CurVer 指向的那一族。机器上装了多个版本、
-        或用户运行的版本不是 CurVer 那一族时，连接会直接失败（表现为"CAD未运行"）。
-        候选顺序：config.json 里显式指定的 progid → 注册表发现的版本化 ProgID（版本倒序）
-        → 通用名兜底。
+        ProgID của AutoCAD được gắn cứng theo dòng phiên bản: mỗi ProgID tương ứng với CLSID riêng,
+        GetActiveObject đi theo luồng "ProgID → CLSID → Running Object Table", nên AutoCAD.Application không kèm phiên bản
+        chỉ kết nối được với dòng mà CurVer trỏ tới. Khi máy cài nhiều phiên bản hoặc người dùng chạy phiên bản không phải CurVer,
+        kết nối sẽ thất bại trực tiếp (hiển thị như "CAD chưa chạy").
+        Thứ tự ứng viên: progid chỉ định tường minh trong config.json → ProgID có phiên bản tìm thấy trong Registry (giảm dần theo phiên bản)
+        → tên chung dự phòng.
         """
-        # 各CAD软件的COM ProgID映射（未匹配的类型回退到AutoCAD）
+        # Ánh xạ COM ProgID của từng phần mềm CAD (loại không khớp sẽ quay về AutoCAD)
         app_map = {
             "autocad": (["AutoCAD.Application"], "AutoCAD"),
-            "gcad": (["GCAD.Application", "GstarCAD.Application"], "浩辰CAD"),
-            "gstarcad": (["GCAD.Application", "GstarCAD.Application"], "浩辰CAD"),
-            "zwcad": (["ZWCAD.Application"], "中望CAD"),
+            "gcad": (["GCAD.Application", "GstarCAD.Application"], "GstarCAD"),
+            "gstarcad": (["GCAD.Application", "GstarCAD.Application"], "GstarCAD"),
+            "zwcad": (["ZWCAD.Application"], "ZWCAD"),
         }
         base_ids, app_name = app_map.get(self.cad_type.lower(),
                                         (["AutoCAD.Application"], "AutoCAD"))
 
         candidates: List[str] = []
-        # 1) 用户显式指定的 ProgID 优先
+        # 1) Ưu tiên ProgID do người dùng chỉ định tường minh
         custom = str((config.get("cad") or {}).get("progid") or "").strip()
         if custom:
             candidates.append(custom)
-        # 2) 注册表里发现的版本化 ProgID（只有AutoCAD有版本族概念）
+        # 2) ProgID có phiên bản tìm thấy trong Registry (chỉ AutoCAD có khái niệm dòng phiên bản)
         if self.cad_type.lower() == "autocad":
             candidates.extend(self._discover_autocad_progids())
-        # 3) 通用名兜底
+        # 3) Tên chung dự phòng
         candidates.extend(base_ids)
 
         seen = set()
@@ -272,9 +272,9 @@ class CADController:
 
     @staticmethod
     def _discover_autocad_progids() -> List[str]:
-        """扫描注册表找出版本化的AutoCAD ProgID（AutoCAD.Application.25.1 等），版本号倒序
+        """Quét Registry để tìm các AutoCAD ProgID có phiên bản (AutoCAD.Application.25.1, v.v.), sắp xếp giảm dần theo số phiên bản
 
-        装了多个AutoCAD版本时，版本化ProgID是唯一能确定连到哪个版本的方式。
+        Khi cài nhiều phiên bản AutoCAD, ProgID có phiên bản là cách duy nhất xác định chắc chắn kết nối đến phiên bản nào.
         """
         prefix = "AutoCAD.Application."
         found: List[str] = []
@@ -291,7 +291,7 @@ class CADController:
                     if name.startswith(prefix):
                         found.append(name)
         except Exception as e:
-            logger.warning(f"扫描AutoCAD版本化ProgID失败: {str(e)}")
+            logger.warning(f"Quét ProgID có phiên bản của AutoCAD thất bại: {str(e)}")
             return []
 
         def version_key(name: str) -> tuple:
@@ -304,7 +304,7 @@ class CADController:
 
     @staticmethod
     def _com_error_text(e) -> str:
-        """提取COM异常的可读信息（HRESULT + 描述），便于用户排查连接失败的原因"""
+        """Trích xuất thông tin dễ đọc của ngoại lệ COM (HRESULT + mô tả) để người dùng dễ kiểm tra nguyên nhân kết nối thất bại"""
         parts: List[str] = []
         hresult = getattr(e, "hresult", None)
         if hresult is not None:
@@ -318,8 +318,8 @@ class CADController:
         return " ".join(parts)
 
     def start_cad(self) -> bool:
-        """启动CAD并创建或打开一个文档"""
-        # 存储旧实例引用（如果有）以便后续清理
+        """Khởi động CAD và tạo hoặc mở một tài liệu"""
+        # Lưu tham chiếu phiên bản cũ (nếu có) để dọn dẹp sau
         old_app = None
         if self.app is not None:
             old_app = self.app
@@ -328,85 +328,85 @@ class CADController:
 
         failures: List[str] = []
         try:
-            # 初始化COM（若已在COM线程上则幂等）
+            # Khởi tạo COM (lũy đẳng nếu đã ở trên luồng COM)
             pythoncom.CoInitialize()
 
             app_ids, app_name = self._get_app_info()
-            logger.info(f"{app_name}候选ProgID: {app_ids}")
+            logger.info(f"Danh sách ProgID ứng viên của {app_name}: {app_ids}")
 
-            # 第一步：尝试连接已运行的实例（遍历候选ProgID）
+            # Bước 1: Thử kết nối tới phiên bản đang chạy (duyệt qua các ProgID ứng viên)
             for app_id in app_ids:
                 try:
-                    logger.info(f"尝试连接现有{app_name}实例（{app_id}）...")
+                    logger.info(f"Đang thử kết nối tới phiên bản {app_name} hiện có ({app_id})...")
                     self.app = win32com.client.GetActiveObject(app_id)
-                    logger.info(f"成功连接到已运行的{app_name}实例")
+                    logger.info(f"Đã kết nối thành công tới phiên bản {app_name} đang chạy")
                     break
                 except Exception as e:
-                    logger.info(f"未找到运行中的{app_name}实例（{app_id}），继续尝试: {str(e)}")
+                    logger.info(f"Không tìm thấy phiên bản {app_name} đang chạy ({app_id}), tiếp tục thử: {str(e)}")
                     failures.append(f"{app_id}: {self._com_error_text(e)}")
 
-            # 第二步：连接失败则启动新实例（同样遍历候选ProgID）
+            # Bước 2: Nếu kết nối thất bại thì khởi chạy phiên bản mới (cũng duyệt qua các ProgID ứng viên)
             if self.app is None:
                 for app_id in app_ids:
                     try:
-                        logger.info(f"正在启动{app_name}实例（{app_id}）...")
+                        logger.info(f"Đang khởi động phiên bản {app_name} ({app_id})...")
                         self.app = win32com.client.Dispatch(app_id)
                         self._call(setattr, self.app, "Visible", True)
                         break
                     except Exception as e:
-                        logger.info(f"启动{app_name}实例失败（{app_id}），继续尝试: {str(e)}")
+                        logger.info(f"Khởi động phiên bản {app_name} thất bại ({app_id}), tiếp tục thử: {str(e)}")
                         failures.append(f"{app_id}: {self._com_error_text(e)}")
                 if self.app is None:
-                    raise Exception(f"无法连接或启动{app_name}（候选ProgID: {app_ids}）")
-                # 等待CAD启动
-                time.sleep(self.startup_wait_time)  # 使用配置的等待时间
+                    raise Exception(f"Không thể kết nối hoặc khởi động {app_name} (ProgID ứng viên: {app_ids})")
+                # Chờ CAD khởi động
+                time.sleep(self.startup_wait_time)  # Dùng thời gian chờ đã cấu hình
 
-            # 第三步：获取或创建文档（集合与属性访问都可能被忙碌的CAD拒绝，逐调用重试）
+            # Bước 3: Lấy hoặc tạo tài liệu (truy cập tập hợp và thuộc tính đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi)
             docs = self._call(getattr, self.app, "Documents")
             if self._call(getattr, docs, "Count") == 0:
-                logger.info("创建新文档...")
+                logger.info("Đang tạo tài liệu mới...")
                 self.doc = self._call_attr(docs, "Add")
             else:
                 try:
-                    logger.info("获取活动文档...")
+                    logger.info("Đang lấy tài liệu hiện hành...")
                     self.doc = self._call(getattr, self.app, "ActiveDocument")
                 except Exception:
-                    # CAD配置为"启动不新建文档"时没有活动文档，回退到手动创建。
-                    # 注意：绝不能为"强制获取文档"去关闭用户已打开的图纸——
-                    # Close(False)会直接丢弃未保存的修改（旧版兜底逻辑曾这样做，
-                    # 属于数据丢失级缺陷），拿不到活动文档时新建一个才是安全做法
-                    logger.info("无活动文档，改为新建文档...")
+                    # Khi CAD cấu hình "không tạo tài liệu mới khi khởi động" sẽ không có tài liệu hiện hành, chuyển sang tạo thủ công.
+                    # Lưu ý: Tuyệt đối không đóng bản vẽ người dùng đang mở để "ép lấy tài liệu" —
+                    # Close(False) sẽ làm mất ngay các thay đổi chưa lưu (logic dự phòng cũ từng làm vậy,
+                    # là lỗi mức mất dữ liệu); khi không lấy được tài liệu hiện hành thì tạo mới mới là cách an toàn
+                    logger.info("Không có tài liệu hiện hành, chuyển sang tạo tài liệu mới...")
                     self.doc = self._call_attr(docs, "Add")
 
-            # 额外安全检查和等待
-            time.sleep(2)  # 给CAD更多时间处理文档创建
+            # Kiểm tra an toàn bổ sung và chờ thêm
+            time.sleep(2)  # Cho CAD thêm thời gian xử lý việc tạo tài liệu
 
             if self.doc is None:
-                raise Exception("无法获取有效的Document对象")
+                raise Exception("Không thể lấy đối tượng Document hợp lệ")
 
-            # 尝试读取文档属性以验证其有效性
+            # Thử đọc thuộc tính tài liệu để xác minh tính hợp lệ
             try:
                 name = self._call(getattr, self.doc, "Name")
-                logger.info(f"文档名称: {name}")
+                logger.info(f"Tên tài liệu: {name}")
             except Exception as name_ex:
-                logger.error(f"无法读取文档名称: {str(name_ex)}")
-                raise Exception("文档对象无效")
+                logger.error(f"Không thể đọc tên tài liệu: {str(name_ex)}")
+                raise Exception("Đối tượng tài liệu không hợp lệ")
 
-            logger.info("CAD已成功启动和准备")
+            logger.info("CAD đã khởi động và sẵn sàng")
             return True
 
         except Exception as e:
-            logger.error(f"启动CAD失败: {str(e)}")
-            # 记录失败原因，供上层提示用户排查（原来所有失败都只显示"CAD未运行"）
+            logger.error(f"Khởi động CAD thất bại: {str(e)}")
+            # Ghi lại lý do thất bại để tầng trên gợi ý người dùng kiểm tra (trước đây mọi lỗi đều chỉ hiện "CAD chưa chạy")
             detail = str(e)
             if failures:
-                # 同一个ProgID连接/启动各失败一次，去重后只留一条
+                # Cùng một ProgID có thể thất bại ở cả bước kết nối và khởi chạy, lọc trùng để giữ lại một dòng
                 unique_failures = list(dict.fromkeys(failures))
-                detail = f"{detail}；各ProgID尝试结果: {'; '.join(unique_failures)}"
+                detail = f"{detail}; Kết quả thử từng ProgID: {'; '.join(unique_failures)}"
             self.last_connect_error = detail
             return False
         finally:
-            # 清理旧实例
+            # Dọn dẹp phiên bản cũ
             if old_app is not None:
                 try:
                     del old_app
@@ -414,23 +414,23 @@ class CADController:
                     pass
 
     def is_running(self) -> bool:
-        """检查CAD是否正在运行"""
+        """Kiểm tra xem CAD có đang chạy hay không"""
         return self.app is not None and self.doc is not None
 
     def _pt(self, point) -> "win32com.client.VARIANT":
-        """将坐标点包装为COM可接受的VARIANT双精度数组
+        """Đóng gói điểm tọa độ thành mảng double VARIANT mà COM chấp nhận
 
-        自动将二维坐标补齐为三维（Z=0），供 AddLine/AddCircle 等方法使用。
+        Tự động bổ sung tọa độ 2D thành 3D (Z=0) để dùng cho các phương thức như AddLine/AddCircle.
         """
         if point is None or len(point) < 2:
-            raise ValueError(f"坐标点至少需要两个分量: {point}")
+            raise ValueError(f"Điểm tọa độ cần ít nhất hai thành phần: {point}")
         x, y = float(point[0]), float(point[1])
         z = float(point[2]) if len(point) > 2 else 0.0
         return win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8, [x, y, z])
 
     @staticmethod
     def _safe_attr(obj, name: str, default=None):
-        """安全读取COM对象属性，实体类型不匹配时返回默认值"""
+        """Đọc an toàn thuộc tính đối tượng COM, trả về giá trị mặc định nếu loại thực thể không khớp"""
         try:
             return getattr(obj, name)
         except Exception:
@@ -438,13 +438,13 @@ class CADController:
 
     @classmethod
     def _read_color(cls, obj) -> Optional[int]:
-        """读取对象颜色为ACI索引整数（在COM线程上调用）
+        """Đọc màu đối tượng dưới dạng số nguyên chỉ số ACI (gọi trên luồng COM)
 
-        兼容多种COM包装差异：
-        1. gen_py静态包装（EnsureDispatch/makepy缓存）对属性名大小写敏感，
-           AutoCAD类型库中实体颜色属性为小写color；
-        2. 动态派发下IDispatch名字不区分大小写，Color可访问；
-        3. 值可能是整数（旧版Color/color属性）或AcadAcCmColor对象（TrueColor）。
+        Tương thích với nhiều khác biệt của wrapper COM:
+        1. Wrapper tĩnh gen_py (bộ đệm EnsureDispatch/makepy) phân biệt hoa thường tên thuộc tính,
+           trong thư viện kiểu AutoCAD thuộc tính màu thực thể là chữ thường color;
+        2. Trong dynamic dispatch, tên IDispatch không phân biệt hoa thường, có thể truy cập Color;
+        3. Giá trị có thể là số nguyên (thuộc tính Color/color bản cũ) hoặc đối tượng AcadAcCmColor (TrueColor).
         """
         for name in ("color", "Color", "ColorIndex"):
             raw = cls._safe_attr(obj, name)
@@ -452,7 +452,7 @@ class CADController:
                 continue
             if isinstance(raw, int):
                 return raw
-            # 新版CAD返回AcadAcCmColor对象，取其ColorIndex
+            # Phiên bản CAD mới trả về đối tượng AcadAcCmColor, lấy ColorIndex của nó
             idx = cls._safe_attr(raw, "ColorIndex")
             if idx is not None:
                 return idx
@@ -460,57 +460,58 @@ class CADController:
 
     @staticmethod
     def _write_color(entity, color: int) -> None:
-        """设置实体颜色为ACI索引（兼容gen_py小写color与动态派发Color两种包装）"""
+        """Đặt màu thực thể theo chỉ số ACI (tương thích cả hai wrapper: color chữ thường của gen_py và Color của dynamic dispatch)"""
         try:
-            entity.color = color  # gen_py静态包装下的真实属性名
+            entity.color = color  # Tên thuộc tính thực dưới wrapper tĩnh gen_py
         except AttributeError:
-            entity.Color = color  # 动态派发下IDispatch不区分大小写
+            entity.Color = color  # Trong dynamic dispatch, IDispatch không phân biệt hoa thường
 
     def _call(self, fn, *args, **kwargs):
-        """带重试执行单个COM调用（仅在COM线程上调用）
+        """Thực thi một lời gọi COM có cơ chế thử lại (chỉ gọi trên luồng COM)
 
-        CAD忙碌(RPC_E_CALL_REJECTED)时调用被拒绝意味着该调用未执行，
-        对单个COM调用重试是安全的；对整个业务方法重试则可能重复绘制
-        （方法前半段已成功、后半段被拒的场合），因此重试粒度必须在调用级。
+        Khi CAD bận (RPC_E_CALL_REJECTED), lời gọi bị từ chối nghĩa là chưa được thực thi,
+        nên thử lại ở cấp một lời gọi COM là an toàn; còn thử lại cả phương thức nghiệp vụ
+        có thể vẽ trùng lặp (trường hợp nửa đầu đã thành công, nửa sau bị từ chối), do đó
+        độ mịn thử lại bắt buộc phải ở cấp lời gọi.
         """
         try:
             return _call_with_com_retry(fn, args, kwargs)
         except Exception as e:
-            # CAD进程已被用户关闭时，持有的COM引用全部失效（重试无意义）：
-            # 重置连接状态，让下一次操作走 is_running()==False 分支自动重连，
-            # 否则所有工具会持续报"操作失败"且永远不会触发重启
+            # Khi tiến trình CAD đã bị người dùng đóng, mọi tham chiếu COM đang giữ đều mất hiệu lực (thử lại vô nghĩa):
+            # đặt lại trạng thái kết nối để thao tác tiếp theo đi vào nhánh is_running()==False và tự kết nối lại,
+            # nếu không tất cả công cụ sẽ liên tục báo "thao tác thất bại" và không bao giờ kích hoạt khởi động lại
             if getattr(e, "hresult", None) in _DEAD_COM_HRESULTS:
-                logger.warning("检测到CAD进程已退出，重置连接状态（下一次操作将重新启动CAD）")
+                logger.warning("Phát hiện tiến trình CAD đã thoát, đặt lại trạng thái kết nối (thao tác tiếp theo sẽ khởi động lại CAD)")
                 self.app = None
                 self.doc = None
             raise
 
     def _call_attr(self, obj, name: str, *args, **kwargs):
-        """带重试执行 obj.name(*args)：成员查找与调用均在重试保护内
+        """Thực thi obj.name(*args) có thử lại: cả việc tra cứu thành viên và lời gọi đều được bảo vệ thử lại
 
-        动态派发（无gen_py缓存的机器，即最终用户的常态）下 obj.name 的
-        查找本身也是一次COM调用（GetIDsOfNames），同样可能被忙碌的CAD
-        拒绝，因此不能写成 self._call(obj.name, ...) ——查找发生在进入
-        _call之前。本方法将查找与调用合并为一个重试单元，
-        并把pywin32转换后的"查找被拒"AttributeError也纳入瞬态重试。
+        Trong dynamic dispatch (máy không có cache gen_py, tức trạng thái mặc định của người dùng cuối),
+        bản thân việc tra cứu obj.name cũng là một lời gọi COM (GetIDsOfNames) và có thể bị CAD đang bận
+        từ chối, nên không thể viết self._call(obj.name, ...) vì tra cứu diễn ra trước khi vào _call.
+        Phương thức này gộp tra cứu và lời gọi thành một đơn vị thử lại, đồng thời đưa cả AttributeError
+        do pywin32 chuyển đổi từ lỗi "tra cứu bị từ chối" vào diện thử lại tạm thời.
         """
         return _call_with_com_retry(lambda: getattr(obj, name)(*args, **kwargs),
                                     (), {}, retry_attr=name)
 
     def _ms(self):
-        """获取模型空间（属性读取同样可能被忙碌的CAD拒绝，需带重试）"""
+        """Lấy không gian mô hình ModelSpace (đọc thuộc tính cũng có thể bị CAD đang bận từ chối, cần có thử lại)"""
         return self._call(getattr, self.doc, "ModelSpace")
 
     @contextmanager
     def _undo_group(self):
-        """将本次工具操作打包为独立撤销组（保证UNDO 1正好撤销一步）
+        """Gói thao tác công cụ hiện tại thành một nhóm hoàn tác độc lập (đảm bảo UNDO 1 hoàn tác đúng một bước)
 
-        AutoCAD会把命令行空闲期间的所有COM修改合并为同一个撤销组，
-        不加标记时一次UNDO可能把整批绘制全部撤销。
-        嵌套使用安全（如draw_rectangle→draw_polyline），内层组归入外层组。
+        AutoCAD sẽ gộp tất cả thay đổi COM trong lúc dòng lệnh rảnh thành cùng một nhóm hoàn tác,
+        nếu không đánh dấu thì một lần UNDO có thể hoàn tác toàn bộ loạt vẽ.
+        An toàn khi dùng lồng nhau (ví dụ draw_rectangle → draw_polyline), nhóm trong sẽ gộp vào nhóm ngoài.
         """
         doc = self.doc
-        # 标记调用同样可能被忙碌的CAD拒绝，需带重试
+        # Lời gọi đánh dấu cũng có thể bị CAD đang bận từ chối, cần có thử lại
         self._call_attr(doc, "StartUndoMark")
         try:
             yield
@@ -518,15 +519,15 @@ class CADController:
             try:
                 self._call_attr(doc, "EndUndoMark")
             except Exception:
-                # 文档已切换等极端情况下无法收尾标记，忽略（标记随文档重置）
+                # Trong tình huống cực đoan như tài liệu đã chuyển đổi khiến không thể đóng dấu, bỏ qua (dấu sẽ tự đặt lại theo tài liệu)
                 pass
 
     def _check_target_not_occupied(self, file_path: str) -> None:
-        """检查目标保存路径是否被其他已打开的图纸占用
+        """Kiểm tra đường dẫn lưu đích có đang bị bản vẽ khác đang mở chiếm dụng hay không
 
-        AutoCAD会锁定已打开文档对应的DWG文件，向这些路径SaveAs会持续报
-        "保存文档时出错"(-2145320861)且重试无效（实测等待40秒仍失败），
-        故提前检测快速失败。当前文档占用同路径属于原地另存，放行。
+        AutoCAD sẽ khóa tệp DWG tương ứng với các tài liệu đang mở; gọi SaveAs vào các đường dẫn đó sẽ liên tục báo
+        "Lỗi khi lưu tài liệu" (-2145320861) và thử lại cũng vô ích (thực đo chờ 40 giây vẫn thất bại),
+        do đó kiểm tra trước để báo lỗi nhanh. Nếu tài liệu hiện tại đang chiếm cùng đường dẫn thì là lưu đè tại chỗ, cho phép.
         """
         try:
             norm = os.path.normcase(file_path)
@@ -536,106 +537,106 @@ class CADController:
                 doc = self._call_attr(docs, "Item", i)
                 full = self._safe_attr(doc, "FullName")
                 if full and os.path.normcase(str(full)) == norm:
-                    # 打开文档的名称在同一CAD会话内唯一，同名即当前文档
+                    # Tên tài liệu đang mở là duy nhất trong cùng phiên CAD, trùng tên tức là tài liệu hiện tại
                     if self._safe_attr(doc, "Name") == current_name:
                         continue
                     raise ValueError(
-                        f"目标文件已被其他打开的图纸占用，无法覆盖保存: {file_path}（请先关闭占用该文件的图纸）"
+                        f"Tệp đích đang bị bản vẽ đang mở khác chiếm dụng, không thể lưu ghi đè: {file_path} (vui lòng đóng bản vẽ đang chiếm tệp này trước)"
                     )
         except ValueError:
             raise
         except Exception:
-            # 预检查本身失败（如CAD忙碌）不阻断保存，交由SaveAs及其调用级重试兜底
+            # Nếu bản thân bước kiểm tra trước thất bại (như CAD bận) thì không chặn việc lưu, để SaveAs và cơ chế thử lại cấp lời gọi xử lý
             pass
 
     def save_drawing(self, file_path: str) -> bool:
-        """保存当前图纸到指定路径
+        """Lưu bản vẽ hiện tại tới đường dẫn chỉ định
 
         Raises:
-            ValueError: 目标文件正被其他打开的图纸占用时
+            ValueError: Khi tệp đích đang bị bản vẽ đang mở khác chiếm dụng
         """
         if not self.is_running():
-            logger.error("CAD未运行，无法保存图纸")
+            logger.error("CAD chưa chạy, không thể lưu bản vẽ")
             return False
 
         try:
-            # 相对路径必须先转为绝对路径：SaveAs在CAD进程内解析路径，
-            # 其工作目录与MCP服务器的工作目录通常不同（实测相对文件会存到别处）
+            # Đường dẫn tương đối phải chuyển sang tuyệt đối trước: SaveAs phân giải đường dẫn trong tiến trình CAD,
+            # mà thư mục làm việc của CAD thường khác thư mục làm việc của máy chủ MCP (thực tế tệp tương đối sẽ bị lưu chỗ khác)
             file_path = os.path.abspath(file_path)
 
-            # 确保目录存在（abspath后必有dirname；目录可能尚未创建）
+            # Đảm bảo thư mục tồn tại (sau abspath chắc chắn có dirname; thư mục có thể chưa được tạo)
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-            # 目标被占用时SaveAs会持续报错且重试无效，提前快速失败
+            # Khi đích bị chiếm dụng, SaveAs sẽ liên tục báo lỗi và thử lại vô ích, nên kiểm tra trước để thất bại nhanh
             self._check_target_not_occupied(file_path)
 
-            # 保存文件（SaveAs返回后CAD仍可能短暂拒绝后续修改调用，
-            # 后续工具的COM调用会经由调用级重试自动等待恢复）
+            # Lưu tệp (sau khi SaveAs trả về, CAD vẫn có thể tạm thời từ chối các lời gọi chỉnh sửa tiếp theo,
+            # lời gọi COM của công cụ sau sẽ tự động chờ phục hồi thông qua cơ chế thử lại cấp lời gọi)
             self._call_attr(self.doc, "SaveAs", file_path)
-            logger.info(f"图纸已保存到: {file_path}")
+            logger.info(f"Bản vẽ đã được lưu tại: {file_path}")
 
             return True
         except ValueError:
             raise
         except Exception as e:
-            logger.error(f"保存图纸失败: {str(e)}")
+            logger.error(f"Lưu bản vẽ thất bại: {str(e)}")
             return False
 
     def refresh_view(self) -> None:
-        """强制重生成视图（仅用于显式刷新场景，勿在绘图/编辑后调用）
+        """Bắt buộc tái tạo (Regen) khung nhìn (chỉ dùng cho ngữ cảnh làm mới tường minh, không gọi sau khi vẽ/chỉnh sửa)
 
-        注意：AutoCAD会把COM修改后的重生成(Regen)记录进撤销栈，导致
-        随后的UNDO变成不可见变化的空操作（实测无论是否加撤销标记）。
-        因此各绘图/编辑方法不再自动刷新——新增实体会自动显示，
-        需要全图刷新时用 zoom_extents 或 send_command 执行 ZOOM。
+        Lưu ý: AutoCAD ghi lại lệnh Regen sau thay đổi COM vào ngăn xếp hoàn tác, khiến
+        lệnh UNDO tiếp theo trở thành thao tác rỗng không thấy thay đổi (thực đo đúng dù có đặt dấu undo hay không).
+        Vì vậy các phương thức vẽ/chỉnh sửa không tự động làm mới nữa — thực thể mới thêm sẽ tự hiển thị,
+        khi cần làm mới toàn bản vẽ hãy dùng zoom_extents hoặc send_command thực thi ZOOM.
         """
         if self.is_running():
             try:
                 self._call_attr(self.doc, "Regen", 1)  # acAllViewports = 1
             except Exception as e:
-                logger.error(f"刷新视图失败: {str(e)}")
+                logger.error(f"Làm mới khung nhìn thất bại: {str(e)}")
 
     def validate_lineweight(self, lineweight) -> int:
-        """验证并返回有效的线宽值
+        """Xác thực và trả về giá trị độ dày nét hợp lệ
 
-        如果提供的线宽值不在有效值列表中，则返回默认值0
+        Nếu giá trị độ dày nét cung cấp không nằm trong danh sách hợp lệ, trả về giá trị mặc định 0
 
         Args:
-            lineweight: 要验证的线宽值
+            lineweight: Giá trị độ dày nét cần xác thực
 
         Returns:
-            有效的线宽值
+            Giá trị độ dày nét hợp lệ
         """
         if lineweight is None:
             return None
 
-        # 检查线宽是否在有效值列表中
+        # Kiểm tra độ dày nét có nằm trong danh sách hợp lệ không
         if lineweight in self.valid_lineweights:
             return lineweight
         else:
-            logger.warning(f"线宽值 {lineweight} 无效，将使用默认值 0")
+            logger.warning(f"Giá trị độ dày nét {lineweight} không hợp lệ, sẽ dùng giá trị mặc định 0")
             return 0
 
     def _apply_style(self, entity, layer=None, color=None, lineweight=None) -> None:
-        """为实体统一设置图层/颜色/线宽（各绘制方法的公共部分）
+        """Áp dụng thống nhất lớp/màu sắc/độ dày nét cho thực thể (phần dùng chung của các phương thức vẽ)
 
-        属性设置是幂等操作，逐个带重试执行：单个属性被CAD拒绝时重试，
-        不会影响已成功的部分。
+        Thiết lập thuộc tính là thao tác lũy đẳng, thực hiện lần lượt có thử lại: khi một thuộc tính bị CAD từ chối
+        sẽ thử lại mà không ảnh hưởng đến các phần đã thành công.
         """
-        # 如果指定了图层，设置图层
+        # Nếu có chỉ định lớp, thiết lập lớp
         if layer:
-            # 确保图层存在（只创建不激活：避免把用户正在使用的当前图层悄悄切走）
+            # Đảm bảo lớp tồn tại (chỉ tạo không kích hoạt: tránh âm thầm đổi mất lớp hiện hành người dùng đang dùng)
             target_layer = self._ensure_layer(layer)
-            # 设置实体的图层（使用CAD返回的真实图层名，避免传入名称大小写不匹配）
+            # Đặt lớp cho thực thể (dùng tên lớp thực CAD trả về để tránh lệch hoa thường với tên truyền vào)
             self._call(setattr, entity, "Layer", self._call(getattr, target_layer, "Name"))
 
-        # 如果指定了颜色，设置颜色
+        # Nếu có chỉ định màu, thiết lập màu
         if color is not None:
             self._call(self._write_color, entity, color)
 
         if lineweight is not None:
             lw = self.validate_lineweight(lineweight)
-            # gen_py包装下属性名为Lineweight（与LineWeight的写法差异同Color/color）
+            # Dưới wrapper gen_py tên thuộc tính là Lineweight (khác biệt với LineWeight tương tự Color/color)
             try:
                 self._call(setattr, entity, "Lineweight", lw)
             except AttributeError:
@@ -643,139 +644,139 @@ class CADController:
 
     def draw_line(self, start_point: Tuple[float, float, float],
                  end_point: Tuple[float, float, float], layer: str = None, color: int = None, lineweight=None) -> Any:
-        """绘制直线"""
+        """Vẽ đoạn thẳng"""
         if not self.is_running():
             return None
 
         try:
-            # 使用VARIANT包装坐标点数据（_pt自动补齐Z轴）
+            # Dùng VARIANT đóng gói dữ liệu điểm tọa độ (_pt tự động bổ sung trục Z)
             start_array = self._pt(start_point)
             end_array = self._pt(end_point)
 
-            # 添加直线（独立撤销组，忙碌时在调用级自动重试）
+            # Thêm đoạn thẳng (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
             with self._undo_group():
                 line = self._call_attr(self._ms(), "AddLine", start_array, end_array)
 
-                # 设置图层、颜色、线宽
+                # Thiết lập lớp, màu sắc, độ dày nét
                 self._apply_style(line, layer, color, lineweight)
 
-            logger.debug(f"已绘制直线: 起点{start_point}, 终点{end_point}, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã vẽ đoạn thẳng: điểm đầu {start_point}, điểm cuối {end_point}, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return line
 
         except Exception as e:
-            logger.error(f"绘制直线时出错: {str(e)}")
+            logger.error(f"Lỗi khi vẽ đoạn thẳng: {str(e)}")
             return None
 
     def draw_circle(self, center: Tuple[float, float, float],
                    radius: float, layer: str = None, color: int = None, lineweight=None) -> Any:
-        """绘制圆"""
+        """Vẽ đường tròn"""
         if not self.is_running():
             return None
 
-        # 半径必须为正（CAD拒绝0和负半径），提前失败并给出明确日志
+        # Bán kính phải là số dương (CAD từ chối bán kính 0 và âm), báo lỗi sớm với log rõ ràng
         if radius <= 0:
-            logger.error(f"绘制圆失败: 半径({radius})必须为正数")
+            logger.error(f"Vẽ đường tròn thất bại: bán kính ({radius}) phải là số dương")
             return None
 
         try:
-            # 使用VARIANT包装坐标点数据（_pt自动补齐Z轴）
+            # Dùng VARIANT đóng gói dữ liệu điểm tọa độ (_pt tự động bổ sung trục Z)
             center_array = self._pt(center)
 
-            # 添加圆（独立撤销组，忙碌时在调用级自动重试）
+            # Thêm đường tròn (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
             with self._undo_group():
                 circle = self._call_attr(self._ms(), "AddCircle", center_array, radius)
 
-                # 设置图层、颜色、线宽
+                # Thiết lập lớp, màu sắc, độ dày nét
                 self._apply_style(circle, layer, color, lineweight)
 
-            logger.debug(f"已绘制圆: 中心{center}, 半径{radius}, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã vẽ đường tròn: tâm {center}, bán kính {radius}, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return circle
 
         except Exception as e:
-            logger.error(f"绘制圆时出错: {str(e)}")
+            logger.error(f"Lỗi khi vẽ đường tròn: {str(e)}")
             return None
 
     def draw_arc(self, center: Tuple[float, float, float],
                 radius: float, start_angle: float, end_angle: float, layer: str = None, color: int = None, lineweight=None) -> Any:
-        """绘制圆弧"""
+        """Vẽ cung tròn"""
         if not self.is_running():
             return None
 
-        # 半径必须为正（CAD拒绝0和负半径），提前失败并给出明确日志
+        # Bán kính phải là số dương (CAD từ chối bán kính 0 và âm), báo lỗi sớm với log rõ ràng
         if radius <= 0:
-            logger.error(f"绘制圆弧失败: 半径({radius})必须为正数")
+            logger.error(f"Vẽ cung tròn thất bại: bán kính ({radius}) phải là số dương")
             return None
 
         try:
-            # 将角度转换为弧度
+            # Chuyển đổi góc sang radian
             start_rad = math.radians(start_angle)
             end_rad = math.radians(end_angle)
 
-            # 使用VARIANT包装坐标点数据
+            # Dùng VARIANT đóng gói dữ liệu điểm tọa độ
             center_array = self._pt(center)
 
-            # 添加圆弧（独立撤销组，忙碌时在调用级自动重试）
+            # Thêm cung tròn (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
             with self._undo_group():
                 arc = self._call_attr(self._ms(), "AddArc", center_array, radius, start_rad, end_rad)
 
-                # 设置图层、颜色、线宽
+                # Thiết lập lớp, màu sắc, độ dày nét
                 self._apply_style(arc, layer, color, lineweight)
 
-            logger.debug(f"已绘制圆弧: 中心{center}, 半径{radius}, 起始角度{start_angle}, 结束角度{end_angle}, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã vẽ cung tròn: tâm {center}, bán kính {radius}, góc bắt đầu {start_angle}, góc kết thúc {end_angle}, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return arc
         except Exception as e:
-            logger.error(f"绘制圆弧失败: {str(e)}")
+            logger.error(f"Vẽ cung tròn thất bại: {str(e)}")
             return None
 
     def draw_ellipse(self, center: Tuple[float, float, float],
                     major_axis: float, minor_axis: float, rotation: float = 0,
                     layer: str = None, color: int = None, lineweight=None) -> Any:
-        """绘制椭圆"""
+        """Vẽ hình elip"""
         if not self.is_running():
             return None
 
-        # 长轴/短轴必须为正，且长轴不小于短轴——AddEllipse的RadiusRatio参数
-        # 为短轴/长轴，必须落在(0,1]区间；长轴为0还会导致本地除零
+        # Trục lớn/trục nhỏ phải dương và trục lớn không nhỏ hơn trục nhỏ — tham số RadiusRatio của AddEllipse
+        # là trục nhỏ / trục lớn, phải nằm trong (0, 1]; trục lớn bằng 0 cũng sẽ gây lỗi chia cho 0 cục bộ
         if major_axis <= 0 or minor_axis <= 0 or minor_axis > major_axis:
-            logger.error(f"绘制椭圆失败: 长轴({major_axis})必须为正且不小于短轴({minor_axis})")
+            logger.error(f"Vẽ hình elip thất bại: trục lớn ({major_axis}) phải dương và không nhỏ hơn trục nhỏ ({minor_axis})")
             return None
 
         try:
             if rotation is None:
                 rotation = 0
 
-            # 将旋转角度转换为弧度
+            # Chuyển đổi góc xoay sang radian
             rotation_rad = math.radians(rotation)
 
-            # 使用VARIANT包装坐标点数据
+            # Dùng VARIANT đóng gói dữ liệu điểm tọa độ
             center_array = self._pt(center)
 
-            # 计算椭圆的主轴向量
+            # Tính vector trục chính của hình elip
             major_x = major_axis * math.cos(rotation_rad)
             major_y = major_axis * math.sin(rotation_rad)
             major_vector = win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8,
                                                [major_x, major_y, 0])
 
-            # 添加椭圆（独立撤销组，忙碌时在调用级自动重试）
+            # Thêm hình elip (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
             with self._undo_group():
                 ellipse = self._call_attr(self._ms(), "AddEllipse", center_array, major_vector, minor_axis / major_axis)
 
-                # 设置图层、颜色、线宽
+                # Thiết lập lớp, màu sắc, độ dày nét
                 self._apply_style(ellipse, layer, color, lineweight)
 
-            logger.debug(f"已绘制椭圆: 中心{center}, 长轴{major_axis}, 短轴{minor_axis}, 旋转角度{rotation}, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã vẽ hình elip: tâm {center}, trục lớn {major_axis}, trục nhỏ {minor_axis}, góc xoay {rotation}, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return ellipse
         except Exception as e:
-            logger.error(f"绘制椭圆失败: {str(e)}")
+            logger.error(f"Vẽ hình elip thất bại: {str(e)}")
             return None
 
     def draw_polyline(self, points: List[Tuple[float, float, float]], closed: bool = False, layer: str = None, color: int = None, lineweight=None) -> Any:
-        """绘制多段线"""
+        """Vẽ đường đa tuyến (polyline)"""
         if not self.is_running():
             return None
 
         try:
-            # 确保所有点都是三维的
+            # Đảm bảo tất cả các điểm đều là 3D
             processed_points = []
             for point in points:
                 if len(point) == 2:
@@ -783,276 +784,276 @@ class CADController:
                 else:
                     processed_points.append(point)
 
-            # 创建点数组
+            # Tạo mảng điểm
             point_array = win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_R8,
                                                 [coord for point in processed_points for coord in point])
 
-            # 添加多段线（独立撤销组，忙碌时在调用级自动重试）
+            # Thêm đường đa tuyến (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
             with self._undo_group():
                 polyline = self._call_attr(self._ms(), "AddPolyline", point_array)
 
-                # 如果需要闭合
+                # Nếu cần khép kín
                 if closed and len(processed_points) > 2:
                     self._call(setattr, polyline, "Closed", True)
 
-                # 设置图层、颜色、线宽
+                # Thiết lập lớp, màu sắc, độ dày nét
                 self._apply_style(polyline, layer, color, lineweight)
 
-            logger.debug(f"已绘制多段线: {len(points)}个点, {'闭合' if closed else '不闭合'}, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã vẽ đường đa tuyến: {len(points)} điểm, {'khép kín' if closed else 'không khép kín'}, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return polyline
         except Exception as e:
-            logger.error(f"绘制多段线时出错: {str(e)}")
+            logger.error(f"Lỗi khi vẽ đường đa tuyến: {str(e)}")
             return None
 
     def draw_rectangle(self, corner1: Tuple[float, float, float],
                       corner2: Tuple[float, float, float], layer: str = None, color: int = None, lineweight=None) -> Any:
-        """绘制矩形"""
+        """Vẽ hình chữ nhật"""
         if not self.is_running():
             return None
 
         try:
-            # 确保点是三维的
+            # Đảm bảo các điểm là 3D
             if len(corner1) == 2:
                 corner1 = (corner1[0], corner1[1], 0)
             if len(corner2) == 2:
                 corner2 = (corner2[0], corner2[1], 0)
 
-            # 计算矩形的四个角点
+            # Tính bốn điểm góc của hình chữ nhật
             x1, y1, z1 = corner1
             x2, y2, z2 = corner2
 
-            # 创建矩形的四个点
+            # Tạo bốn điểm của hình chữ nhật
             points = [
                 (x1, y1, z1),
                 (x2, y1, z1),
                 (x2, y2, z1),
                 (x1, y2, z1),
-                (x1, y1, z1)  # 闭合矩形
+                (x1, y1, z1)  # Khép kín hình chữ nhật
             ]
 
-            # 使用多段线绘制矩形
+            # Dùng đường đa tuyến để vẽ hình chữ nhật
             return self.draw_polyline(points, True, layer, color, lineweight)
         except Exception as e:
-            logger.error(f"绘制矩形时出错: {str(e)}")
+            logger.error(f"Lỗi khi vẽ hình chữ nhật: {str(e)}")
             return None
 
     def draw_text(self, position: Tuple[float, float, float],
                  text: str, height: float = 2.5, rotation: float = 0, layer: str = None, color: int = None) -> Any:
-        """添加文本"""
+        """Thêm văn bản"""
         if not self.is_running():
             return None
 
         try:
-            # 使用VARIANT包装坐标点数据（_pt自动补齐Z轴）
+            # Dùng VARIANT đóng gói dữ liệu điểm tọa độ (_pt tự động bổ sung trục Z)
             position_array = self._pt(position)
 
-            # 添加文本（独立撤销组，忙碌时在调用级自动重试）
+            # Thêm văn bản (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
             with self._undo_group():
                 text_obj = self._call_attr(self._ms(), "AddText", text, position_array, height)
 
-                # 设置旋转角度
+                # Thiết lập góc xoay
                 if rotation != 0:
                     self._call(setattr, text_obj, "Rotation", math.radians(rotation))
 
-                # 设置图层、颜色
+                # Thiết lập lớp, màu sắc
                 self._apply_style(text_obj, layer, color)
 
-            logger.debug(f"已添加文本: '{text}', 位置{position}, 高度{height}, 旋转{rotation}度, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã thêm văn bản: '{text}', vị trí {position}, chiều cao {height}, góc xoay {rotation} độ, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return text_obj
         except Exception as e:
-            logger.error(f"添加文本时出错: {str(e)}")
+            logger.error(f"Lỗi khi thêm văn bản: {str(e)}")
             return None
 
     def draw_hatch(self, points: List[Tuple[float, float, float]],
                   pattern_name: str = "SOLID", scale: float = 1.0, layer: str = None, color: int = None) -> Any:
-        """绘制填充图案
+        """Vẽ mẫu tô vật liệu (hatch)
 
         Args:
-            points: 填充边界的点集，每个点为二维或三维坐标元组
-            pattern_name: 填充图案名称，默认为"SOLID"(实体填充)
-            scale: 填充图案比例，默认为1.0
-            layer: 图层名称，如果为None则使用当前图层
-            color: 颜色索引，如果为None则使用默认颜色
+            points: Tập hợp điểm tạo đường bao tô, mỗi điểm là tuple tọa độ 2D hoặc 3D
+            pattern_name: Tên mẫu tô, mặc định là "SOLID" (tô đặc)
+            scale: Tỷ lệ mẫu tô, mặc định là 1.0
+            layer: Tên lớp, nếu là None thì dùng lớp hiện hành
+            color: Chỉ số màu, nếu là None thì dùng màu mặc định
 
         Returns:
-            成功返回填充对象，失败返回None
+            Trả về đối tượng hatch nếu thành công, trả về None nếu thất bại
         """
         if not self.is_running():
             return None
 
         closed_polyline = None
         try:
-            # 确保所有点都是有效的
+            # Đảm bảo tất cả các điểm đều hợp lệ
             if not points or len(points) < 3:
-                logger.error("创建填充失败: 至少需要3个点来定义填充边界")
+                logger.error("Tạo mẫu tô thất bại: cần ít nhất 3 điểm để xác định đường bao tô")
                 return None
 
-            # 创建边界多段线（内部已有独立撤销组，此处外层组使填充+边界成为一个撤销步骤）
+            # Tạo đường đa tuyến bao (bên trong đã có nhóm hoàn tác độc lập, nhóm ngoài ở đây giúp hatch + đường bao thành một bước hoàn tác)
             with self._undo_group():
                 closed_polyline = self.draw_polyline(points, closed=True, layer=layer)
                 if not closed_polyline:
-                    logger.error("创建填充失败: 无法创建边界多段线")
+                    logger.error("Tạo mẫu tô thất bại: không thể tạo đường đa tuyến bao")
                     return None
 
-                # 创建填充对象 (0表示正常填充，True表示关联边界)
+                # Tạo đối tượng hatch (0 là kiểu tô thường, True là liên kết với đường bao)
                 hatch = self._call_attr(self._ms(), "AddHatch", 0, pattern_name, True)
 
-                # 添加外部边界循环
-                # 使用VARIANT包装对象数组
+                # Thêm vòng bao ngoài
+                # Dùng VARIANT đóng gói mảng đối tượng
                 object_ids = win32com.client.VARIANT(pythoncom.VT_ARRAY | pythoncom.VT_DISPATCH, [closed_polyline])
                 self._call_attr(hatch, "AppendOuterLoop", object_ids)
 
-                # 设置填充图案比例
+                # Thiết lập tỷ lệ mẫu tô
                 self._call(setattr, hatch, "PatternScale", scale)
 
-                # 设置图层、颜色
+                # Thiết lập lớp, màu sắc
                 self._apply_style(hatch, layer, color)
 
-                # 更新填充 (计算填充区域)
+                # Cập nhật mẫu tô (tính toán vùng tô)
                 self._call_attr(hatch, "Evaluate")
 
-            logger.debug(f"已创建填充: 图案 {pattern_name}, 比例 {scale}, 图层{layer if layer else '默认'}, 颜色{color if color is not None else '默认'}")
+            logger.debug(f"Đã tạo mẫu tô: mẫu {pattern_name}, tỷ lệ {scale}, lớp {layer if layer else 'mặc định'}, màu {color if color is not None else 'mặc định'}")
             return hatch
         except Exception as e:
-            # 失败时清理已创建的边界多段线，避免在图纸上留下孤儿实体
-            # （调用方看到的是"失败"，图纸上却不应多出一条闭合多段线）
+            # Khi thất bại thì dọn dẹp đường đa tuyến bao đã tạo để tránh để lại thực thể mồ côi trên bản vẽ
+            # (bên gọi thấy là "thất bại", trên bản vẽ không nên thừa ra một đường đa tuyến khép kín)
             if closed_polyline is not None:
                 try:
                     self._call_attr(closed_polyline, "Delete")
                 except Exception:
                     pass
-            logger.error(f"创建填充时出错: {str(e)}")
+            logger.error(f"Lỗi khi tạo mẫu tô: {str(e)}")
             return None
 
     def zoom_extents(self) -> bool:
-        """缩放视图以显示所有对象"""
+        """Thu phóng khung nhìn để hiển thị toàn bộ đối tượng"""
         if not self.is_running():
             return False
 
         try:
-            # ZoomExtents 是 Application 对象的方法（非 ActiveViewport）
+            # ZoomExtents là phương thức của đối tượng Application (không phải ActiveViewport)
             self._call_attr(self.app, "ZoomExtents")
-            logger.info("已缩放视图以显示所有对象")
+            logger.info("Đã thu phóng khung nhìn để hiển thị toàn bộ đối tượng")
             return True
         except Exception as e:
-            logger.error(f"缩放视图时出错: {str(e)}")
+            logger.error(f"Lỗi khi thu phóng khung nhìn: {str(e)}")
             return False
 
     def close(self) -> None:
-        """关闭CAD控制器
+        """Đóng bộ điều khiển CAD
 
-        注意：COM 套间由 COMExecutor 线程持有，进程退出时由系统回收，
-        此处仅释放引用，不再跨线程调用 CoUninitialize。
+        Lưu ý: COM apartment do luồng COMExecutor nắm giữ và hệ thống sẽ thu hồi khi tiến trình thoát,
+        ở đây chỉ giải phóng tham chiếu, không gọi CoUninitialize xuyên luồng.
         """
         try:
-            # 释放COM资源
+            # Giải phóng tài nguyên COM
             if self.app is not None:
                 del self.app
         except:
             pass
 
     def _ensure_layer(self, layer_name: str):
-        """确保图层存在并返回图层对象（已存在则直接返回，不改动当前图层）
+        """Đảm bảo lớp tồn tại và trả về đối tượng lớp (nếu đã tồn tại thì trả về ngay, không đổi lớp hiện hành)
 
-        绘图时指定图层走这里：只保证实体能落到目标图层，
-        不把用户正在使用的当前图层悄悄切走。
-        Layers集合与Name读取都可能被忙碌的CAD拒绝，逐调用重试。
+        Khi chỉ định lớp lúc vẽ sẽ đi qua đây: chỉ đảm bảo thực thể rơi vào đúng lớp đích,
+        không âm thầm đổi mất lớp hiện hành người dùng đang sử dụng.
+        Cả tập hợp Layers lẫn việc đọc Name đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi.
         """
         layers = self._call(getattr, self.doc, "Layers")
         for i in range(self._call(getattr, layers, "Count")):
             layer = self._call_attr(layers, "Item", i)
-            # CAD图层名不区分大小写，比较时忽略大小写
-            # （否则"wall"会对已存在的"WALL"重复Add，被CAD拒绝）
+            # Tên lớp CAD không phân biệt hoa thường, bỏ qua hoa thường khi so sánh
+            # (nếu không "wall" sẽ gọi Add trùng với "WALL" đã có và bị CAD từ chối)
             if self._call(getattr, layer, "Name").casefold() == layer_name.casefold():
                 return layer
-        # 不存在则创建（独立撤销组）
+        # Nếu chưa tồn tại thì tạo mới (nhóm hoàn tác độc lập)
         with self._undo_group():
             return self._call_attr(layers, "Add", layer_name)
 
     def create_layer(self, layer_name: str) -> bool:    # , color: Union[int, Tuple[int, int, int]] = 7
-        """创建新图层并设为当前图层（已存在则直接激活）
+        """Tạo lớp mới và đặt làm lớp hiện hành (nếu đã tồn tại thì kích hoạt ngay)
 
         Args:
-            layer_name: 图层名称
-            color: 颜色值，可以是CAD颜色索引(int)或RGB颜色值(tuple)
+            layer_name: Tên lớp
+            color: Giá trị màu, có thể là chỉ số màu CAD (int) hoặc giá trị màu RGB (tuple)
 
         Returns:
-            操作是否成功
+            Thao tác có thành công hay không
         """
         if not self.is_running():
             return False
 
         try:
-            # 确保图层存在（存在则复用，不存在则创建）
+            # Đảm bảo lớp tồn tại (có sẵn thì tái sử dụng, chưa có thì tạo mới)
             new_layer = self._ensure_layer(layer_name)
 
-            # 图层不设置颜色，设置里面的实体颜色
-            # # 设置颜色
+            # Không đặt màu cho lớp, đặt màu cho từng thực thể bên trong
+            # # Thiết lập màu
             # if isinstance(color, int):
-            #     # 使用颜色索引
+            #     # Dùng chỉ số màu
             #     new_layer.Color = color
             # elif isinstance(color, tuple) and len(color) == 3:
-            #     # 使用RGB值
+            #     # Dùng giá trị RGB
             #     r, g, b = color
-            #     # 设置TrueColor
+            #     # Thiết lập TrueColor
             #     new_layer.TrueColor = self._create_true_color(r, g, b)
 
-            # 设置为当前图层
+            # Đặt làm lớp hiện hành
             self._call(setattr, self.doc, "ActiveLayer", new_layer)
-            logger.info(f"已创建并设为当前图层: {layer_name}")  #, 颜色: {color}
+            logger.info(f"Đã tạo và đặt làm lớp hiện hành: {layer_name}")  #, màu: {color}
             return True
         except Exception as e:
-            logger.error(f"创建图层时出错: {str(e)}")
+            logger.error(f"Lỗi khi tạo lớp: {str(e)}")
             return False
 
     def add_dimension(self, start_point: Tuple[float, float, float],
                      end_point: Tuple[float, float, float],
                      text_position: Tuple[float, float, float] = None, textheight: float = 5, layer: str = None, color: int=None) -> Any:
-            """添加线性标注"""
+            """Thêm ghi kích thước tuyến tính"""
             if not self.is_running():
                 return None
 
             try:
-                # 如果未提供文本位置，自动计算
+                # Nếu không cung cấp vị trí chữ, tự động tính toán
                 if text_position is None:
-                    # 在起点和终点之间的中点上方
+                    # Phía trên trung điểm giữa điểm đầu và điểm cuối
                     mid_x = (start_point[0] + end_point[0]) / 2
                     mid_y = (start_point[1] + end_point[1]) / 2
                     text_position = (mid_x, mid_y + 5, 0)
 
-                # 使用VARIANT包装坐标点数据（_pt自动补齐Z轴）
+                # Dùng VARIANT đóng gói dữ liệu điểm tọa độ (_pt tự động bổ sung trục Z)
                 start_array = self._pt(start_point)
                 end_array = self._pt(end_point)
                 text_pos_array = self._pt(text_position)
 
-                # 添加对齐标注（独立撤销组，忙碌时在调用级自动重试）
+                # Thêm ghi kích thước gióng hàng (nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận)
                 with self._undo_group():
                     dimension = self._call_attr(self._ms(), "AddDimAligned", start_array, end_array, text_pos_array)
 
-                    # 设置文字高度
+                    # Thiết lập chiều cao chữ
                     if textheight is not None:
                         self._call(setattr, dimension, "TextHeight", textheight)
 
-                    # 设置图层、颜色
+                    # Thiết lập lớp, màu sắc
                     self._apply_style(dimension, layer, color)
 
-                logger.info(f"已添加标注: 从 {start_point} 到 {end_point}, 图层{layer if layer else '默认'}")
+                logger.info(f"Đã thêm ghi kích thước: từ {start_point} đến {end_point}, lớp {layer if layer else 'mặc định'}")
                 return dimension
             except Exception as e:
-                logger.error(f"添加标注时出错: {str(e)}")
+                logger.error(f"Lỗi khi thêm ghi kích thước: {str(e)}")
                 return None
 
-    # ==================== 查询类操作（实时读取CAD文档状态） ====================
+    # ==================== Thao tác truy vấn (đọc trạng thái tài liệu CAD theo thời gian thực) ====================
 
     @staticmethod
     def _friendly_type(object_name: str) -> str:
-        """将COM对象类型名（如AcDbLine）转换为友好类型名（如line）"""
+        """Chuyển tên loại đối tượng COM (như AcDbLine) sang tên loại thân thiện (như line)"""
         mapping = {
             "AcDbLine": "line",
             "AcDbCircle": "circle",
             "AcDbArc": "arc",
             "AcDbEllipse": "ellipse",
-            "AcDbPolyline": "polyline",       # 轻量多段线
+            "AcDbPolyline": "polyline",       # Đường đa tuyến nhẹ (LWPolyline)
             "AcDb2dPolyline": "polyline",
             "AcDb3dPolyline": "polyline",
             "AcDbText": "text",
@@ -1066,7 +1067,7 @@ class CADController:
         return mapping.get(object_name, object_name)
 
     def get_entity_info(self, entity) -> Dict[str, Any]:
-        """获取实体概要信息（句柄/类型/图层/颜色）"""
+        """Lấy thông tin tóm tắt của thực thể (handle/loại/lớp/màu sắc)"""
         return {
             "handle": str(self._safe_attr(entity, "Handle", "")),
             "entity_type": self._friendly_type(str(self._safe_attr(entity, "ObjectName", ""))),
@@ -1075,12 +1076,12 @@ class CADController:
         }
 
     def list_layers(self) -> List[Dict[str, Any]]:
-        """列出当前图纸的所有图层信息"""
+        """Liệt kê thông tin tất cả các lớp trong bản vẽ hiện tại"""
         if not self.is_running():
             return []
 
         layers = []
-        # 集合与属性读取都可能被忙碌的CAD拒绝，逐调用重试
+        # Cả tập hợp lẫn việc đọc thuộc tính đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi
         active_name = self._call(getattr, self._call(getattr, self.doc, "ActiveLayer"), "Name")
         layer_set = self._call(getattr, self.doc, "Layers")
         for i in range(self._call(getattr, layer_set, "Count")):
@@ -1097,25 +1098,25 @@ class CADController:
         return layers
 
     def list_entities(self, entity_type: str = None, limit: int = 50) -> Dict[str, Any]:
-        """列出模型空间中的实体（实时查询，与CAD文档保持同步）
+        """Liệt kê các thực thể trong không gian mô hình (truy vấn thời gian thực, đồng bộ với tài liệu CAD)
 
         Args:
-            entity_type: 按类型过滤（line/circle/arc等，不区分大小写），None为不过滤
-            limit: 最多返回的实体数量（大图纸时避免一次性返回过多数据）
+            entity_type: Lọc theo loại (line/circle/arc, v.v., không phân biệt hoa thường), None là không lọc
+            limit: Số lượng thực thể tối đa trả về (tránh trả về quá nhiều dữ liệu một lúc với bản vẽ lớn)
 
         Returns:
-            {"total": 模型空间实体总数, "entities": [实体信息]}
+            {"total": tổng số thực thể trong không gian mô hình, "entities": [thông tin thực thể]}
         """
         if not self.is_running():
             return {"total": 0, "entities": []}
 
         ms = self._ms()
-        # Count与Item访问都可能被忙碌的CAD拒绝，逐调用重试
+        # Cả truy cập Count lẫn Item đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi
         total = self._call(getattr, ms, "Count")
         entities = []
         for i in range(total):
             info = self.get_entity_info(self._call_attr(ms, "Item", i))
-            # 精确匹配类型名（子串匹配会让"line"把polyline也带出来）
+            # Khớp chính xác tên loại (khớp chuỗi con sẽ khiến "line" kéo theo cả "polyline")
             if entity_type and info["entity_type"].lower() != entity_type.lower():
                 continue
             entities.append(info)
@@ -1124,9 +1125,9 @@ class CADController:
         return {"total": total, "entities": entities}
 
     def get_entity_properties(self, handle: str) -> Dict[str, Any]:
-        """按句柄获取实体详细属性（几何信息随实体类型而异）"""
+        """Lấy thuộc tính chi tiết của thực thể theo handle (thông tin hình học tùy thuộc loại thực thể)"""
         if not self.is_running():
-            raise RuntimeError("CAD未运行")
+            raise RuntimeError("CAD chưa chạy")
 
         entity = self._get_entity_by_handle(handle)
         object_name = str(self._safe_attr(entity, "ObjectName", ""))
@@ -1139,7 +1140,7 @@ class CADController:
             "lineweight": self._safe_attr(entity, "Lineweight"),
         }
 
-        # 按实体类型补充几何属性
+        # Bổ sung thuộc tính hình học theo từng loại thực thể
         detail: Dict[str, Any] = {}
         if object_name == "AcDbLine":
             detail["start_point"] = list(self._safe_attr(entity, "StartPoint") or [])
@@ -1152,7 +1153,7 @@ class CADController:
         elif object_name == "AcDbArc":
             detail["center"] = list(self._safe_attr(entity, "Center") or [])
             detail["radius"] = self._safe_attr(entity, "Radius")
-            # StartAngle/EndAngle为弧度，转换为度便于理解
+            # StartAngle/EndAngle tính bằng radian, đổi sang độ cho dễ hiểu
             start_rad = self._safe_attr(entity, "StartAngle")
             end_rad = self._safe_attr(entity, "EndAngle")
             detail["start_angle"] = math.degrees(start_rad) if start_rad is not None else None
@@ -1172,10 +1173,10 @@ class CADController:
             detail["text"] = self._safe_attr(entity, "TextString")
             detail["insertion_point"] = list(self._safe_attr(entity, "InsertionPoint") or [])
         elif object_name in ("AcDbPolyline", "AcDb2dPolyline", "AcDb3dPolyline"):
-            # Coordinates为扁平坐标数组，按类型确定每点分量数切分：
-            # 轻量多段线(AcDbPolyline)为2分量[x,y,...]，
-            # 旧式2D/3D多段线(AcDb2dPolyline/AcDb3dPolyline)为3分量[x,y,z,...]，
-            # 统一按2切分会把z当下一点的x，坐标全部错位
+            # Coordinates là mảng tọa độ phẳng, tách theo số thành phần mỗi điểm tùy loại:
+            # đường đa tuyến nhẹ (AcDbPolyline) có 2 thành phần [x,y,...],
+            # đường đa tuyến 2D/3D kiểu cũ (AcDb2dPolyline/AcDb3dPolyline) có 3 thành phần [x,y,z,...],
+            # nếu tách đều theo 2 sẽ biến z thành x của điểm kế tiếp khiến toàn bộ tọa độ bị lệch
             coords = self._safe_attr(entity, "Coordinates") or []
             step = 2 if object_name == "AcDbPolyline" else 3
             detail["coordinates"] = [list(coords[i:i + step]) for i in range(0, len(coords), step)]
@@ -1196,101 +1197,101 @@ class CADController:
         return props
 
     def get_drawing_stats(self) -> Dict[str, Any]:
-        """获取当前文档的实时统计信息（实体数/图层数/文档名）"""
+        """Lấy thông tin thống kê thời gian thực của tài liệu hiện tại (số thực thể/số lớp/tên tài liệu)"""
         if not self.is_running():
             return {"running": False}
         return {
             "running": True,
-            # 各属性读取都可能被忙碌的CAD拒绝，逐调用重试
+            # Mỗi thao tác đọc thuộc tính đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi
             "entity_count": self._call(getattr, self._ms(), "Count"),
             "layer_count": self._call(getattr, self._call(getattr, self.doc, "Layers"), "Count"),
             "document_name": self._call(getattr, self.doc, "Name"),
         }
 
     def screenshot(self) -> bytes:
-        """截取CAD主窗口画面，返回PNG格式字节流"""
+        """Chụp ảnh màn hình cửa sổ chính CAD, trả về luồng byte định dạng PNG"""
         if not self.is_running():
-            raise RuntimeError("CAD未运行")
+            raise RuntimeError("CAD chưa chạy")
 
         import win32gui
         import win32con
         from PIL import ImageGrab
 
-        # 截图前强制全视口重生成：浩辰CAD经COM批量绘图后画布不会自动刷新，
-        # 不重生成会截到绘制前的旧画面（实体已入库，仅显示滞后）
+        # Bắt buộc tái tạo toàn bộ khung nhìn trước khi chụp: GstarCAD sau khi vẽ hàng loạt qua COM không tự làm mới canvas,
+        # nếu không Regen sẽ chụp phải khung hình cũ trước khi vẽ (thực thể đã lưu vào cơ sở dữ liệu, chỉ chậm hiển thị)
         try:
             self._call_attr(self.doc, "Regen", 1)  # 1 = acAllViewports
         except Exception as e:
-            logger.warning(f"截图前重生成失败（仍会尝试截图）: {str(e)}")
+            logger.warning(f"Tái tạo (Regen) trước khi chụp thất bại (vẫn sẽ thử chụp): {str(e)}")
 
-        # CAD主窗口句柄（属性读取可能被忙碌的CAD拒绝，需带重试）
+        # Handle cửa sổ chính của CAD (đọc thuộc tính có thể bị CAD đang bận từ chối, cần có thử lại)
         hwnd = self._call(getattr, self.app, "HWND")
-        # 窗口最小化时GetWindowRect返回的是无效坐标（-32000附近），
-        # 直接截会得到垃圾图，先把窗口还原
+        # Khi cửa sổ bị thu nhỏ, GetWindowRect trả về tọa độ không hợp lệ (quanh -32000),
+        # chụp thẳng sẽ ra ảnh rác, nên khôi phục cửa sổ trước
         if win32gui.IsIconic(hwnd):
             win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
             time.sleep(0.3)
-        # 优先用PrintWindow让CAD把自己的窗口画进位图：不依赖前台，
-        # 被其他窗口遮挡也能截到。Windows会拒绝后台进程的SetForegroundWindow
-        # 且不报错，屏幕截取因此截到挡在前面的窗口
+        # Ưu tiên dùng PrintWindow để CAD tự vẽ cửa sổ của nó vào bitmap: không phụ thuộc foreground,
+        # bị cửa sổ khác che khuất vẫn chụp được. Windows sẽ từ chối SetForegroundWindow của tiến trình nền
+        # mà không báo lỗi, khiến chụp màn hình bị chụp nhầm cửa sổ đang che phía trước
         img = None
         try:
             img = _print_window(hwnd)
         except Exception as e:
-            logger.warning(f"PrintWindow截图失败，改用屏幕截取: {str(e)}")
+            logger.warning(f"Chụp bằng PrintWindow thất bại, chuyển sang chụp màn hình: {str(e)}")
 
         if img is None:
-            # 退路：尽量把CAD窗口带到前台，再截屏幕区域
+            # Phương án dự phòng: cố gắng đưa cửa sổ CAD lên foreground rồi chụp vùng màn hình
             try:
                 win32gui.SetForegroundWindow(hwnd)
                 time.sleep(0.3)
             except Exception as e:
-                logger.warning(f"无法将CAD窗口置前（仍会尝试截图）: {str(e)}")
+                logger.warning(f"Không thể đưa cửa sổ CAD lên trên cùng (vẫn sẽ thử chụp): {str(e)}")
             left, top, right, bottom = win32gui.GetWindowRect(hwnd)
-            # all_screens=True 以支持多显示器/负坐标场景
+            # all_screens=True để hỗ trợ đa màn hình / tọa độ âm
             img = ImageGrab.grab(bbox=(left, top, right, bottom), all_screens=True)
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         return buf.getvalue()
 
-    # ==================== 编辑类操作 ====================
+    # ==================== Thao tác chỉnh sửa ====================
 
     def _get_entity_by_handle(self, handle: str):
-        """按句柄查找实体对象（查找为只读操作，调用级重试安全）"""
+        """Tìm đối tượng thực thể theo handle (tra cứu là thao tác chỉ đọc, thử lại cấp lời gọi an toàn)"""
         entity = self._call_attr(self.doc, "HandleToObject", str(handle))
         if entity is None:
-            raise ValueError(f"未找到句柄为 {handle} 的实体")
+            raise ValueError(f"Không tìm thấy thực thể có handle là {handle}")
         return entity
 
     def erase_entity(self, handle: str) -> bool:
-        """删除指定实体"""
+        """Xóa thực thể chỉ định"""
         if not self.is_running():
             return False
         try:
-            # 独立撤销组：UNDO 1正好撤销本次删除
+            # Nhóm hoàn tác độc lập: UNDO 1 hoàn tác đúng lần xóa này
             with self._undo_group():
                 self._call_attr(self._get_entity_by_handle(handle), "Delete")
             return True
         except Exception as e:
-            logger.error(f"删除实体失败: {str(e)}")
+            logger.error(f"Xóa thực thể thất bại: {str(e)}")
             return False
 
     def move_entity(self, handle: str, displacement: List[float]) -> bool:
-        """移动实体（按位移向量 [dx, dy, dz]）"""
+        """Di chuyển thực thể (theo vector dịch chuyển [dx, dy, dz])"""
         if not self.is_running():
             return False
         try:
             entity = self._get_entity_by_handle(handle)
-            # Move(基点, 第二点) 实现平移：基点取原点，第二点即位移向量
+            # Move(điểm gốc, điểm thứ hai) thực hiện tịnh tiến: lấy gốc tọa độ làm điểm gốc, điểm thứ hai chính là vector dịch chuyển
             with self._undo_group():
                 self._call_attr(entity, "Move", self._pt((0, 0, 0)), self._pt(displacement))
             return True
         except Exception as e:
-            logger.error(f"移动实体失败: {str(e)}")
+            logger.error(f"Di chuyển thực thể thất bại: {str(e)}")
             return False
 
     def rotate_entity(self, handle: str, base_point: List[float], angle_degrees: float) -> bool:
-        """绕基点旋转实体（角度单位：度，逆时针为正）"""
+        """Xoay thực thể quanh điểm gốc (đơn vị góc: độ, ngược chiều kim đồng hồ là dương)"""
         if not self.is_running():
             return False
         try:
@@ -1299,11 +1300,11 @@ class CADController:
                 self._call_attr(entity, "Rotate", self._pt(base_point), math.radians(angle_degrees))
             return True
         except Exception as e:
-            logger.error(f"旋转实体失败: {str(e)}")
+            logger.error(f"Xoay thực thể thất bại: {str(e)}")
             return False
 
     def scale_entity(self, handle: str, base_point: List[float], scale_factor: float) -> bool:
-        """绕基点缩放实体"""
+        """Thu phóng thực thể quanh điểm gốc"""
         if not self.is_running():
             return False
         try:
@@ -1312,27 +1313,27 @@ class CADController:
                 self._call_attr(entity, "ScaleEntity", self._pt(base_point), scale_factor)
             return True
         except Exception as e:
-            logger.error(f"缩放实体失败: {str(e)}")
+            logger.error(f"Thu phóng thực thể thất bại: {str(e)}")
             return False
 
     def copy_entity(self, handle: str, displacement: List[float]):
-        """复制实体并平移指定位移，返回新实体"""
+        """Sao chép thực thể và tịnh tiến theo độ dịch chuyển chỉ định, trả về thực thể mới"""
         if not self.is_running():
             return None
         try:
             entity = self._get_entity_by_handle(handle)
-            # 复制+平移打包为一个撤销组（Copy与Move分开重试，均幂等安全）
+            # Gói sao chép + tịnh tiến thành một nhóm hoàn tác (Copy và Move thử lại riêng, đều lũy đẳng an toàn)
             with self._undo_group():
                 copy = self._call_attr(entity, "Copy")
                 if copy is not None and displacement:
                     self._call_attr(copy, "Move", self._pt((0, 0, 0)), self._pt(displacement))
             return copy
         except Exception as e:
-            logger.error(f"复制实体失败: {str(e)}")
+            logger.error(f"Sao chép thực thể thất bại: {str(e)}")
             return None
 
     def mirror_entity(self, handle: str, point1: List[float], point2: List[float]):
-        """沿两点确定的镜像轴镜像实体，返回镜像产生的新实体（保留原实体）"""
+        """Lấy đối xứng thực thể qua trục xác định bởi hai điểm, trả về thực thể mới tạo ra (giữ nguyên thực thể gốc)"""
         if not self.is_running():
             return None
         try:
@@ -1341,25 +1342,25 @@ class CADController:
                 mirrored = self._call_attr(entity, "Mirror", self._pt(point1), self._pt(point2))
             return mirrored
         except Exception as e:
-            logger.error(f"镜像实体失败: {str(e)}")
+            logger.error(f"Lấy đối xứng thực thể thất bại: {str(e)}")
             return None
 
     def offset_entity(self, handle: str, distance: float) -> List[Any]:
-        """偏移实体（正负值决定偏移方向），返回新实体列表"""
+        """Tạo đường song song (offset) cho thực thể (giá trị âm/dương quyết định hướng offset), trả về danh sách thực thể mới"""
         if not self.is_running():
             return []
         try:
             entity = self._get_entity_by_handle(handle)
             with self._undo_group():
-                # Offset返回新实体数组（可能为空）
+                # Offset trả về mảng thực thể mới (có thể rỗng)
                 result = self._call_attr(entity, "Offset", distance)
             return list(result) if result else []
         except Exception as e:
-            logger.error(f"偏移实体失败: {str(e)}")
+            logger.error(f"Offset thực thể thất bại: {str(e)}")
             return []
 
     def array_linear_entity(self, handle: str, count: int, displacement: List[float]) -> List[Any]:
-        """矩形阵列：沿位移向量方向复制 count-1 份（含原实体共 count 个）"""
+        """Mảng tuyến tính: sao chép count-1 bản theo hướng vector dịch chuyển (tổng cộng count bản gồm cả thực thể gốc)"""
         if not self.is_running():
             return []
         try:
@@ -1367,7 +1368,7 @@ class CADController:
             dx, dy = float(displacement[0]), float(displacement[1])
             dz = float(displacement[2]) if len(displacement) > 2 else 0.0
             copies = []
-            # 整个阵列打包为一个撤销组；循环内逐调用重试避免部分完成后重复
+            # Gói toàn bộ mảng thành một nhóm hoàn tác; thử lại từng lời gọi trong vòng lặp để tránh lặp lại phần đã xong
             with self._undo_group():
                 for i in range(1, count):
                     copy = self._call_attr(src, "Copy")
@@ -1375,11 +1376,11 @@ class CADController:
                     copies.append(copy)
             return copies
         except Exception as e:
-            logger.error(f"线性阵列失败: {str(e)}")
+            logger.error(f"Tạo mảng tuyến tính thất bại: {str(e)}")
             return []
 
     def array_polar_entity(self, handle: str, count: int, center: List[float], total_angle_degrees: float = 360.0) -> List[Any]:
-        """环形阵列：绕中心点在 total_angle 角度范围内复制 count-1 份"""
+        """Mảng tròn: sao chép count-1 bản xoay quanh tâm trong phạm vi góc total_angle"""
         if not self.is_running():
             return []
         try:
@@ -1387,7 +1388,7 @@ class CADController:
             step = math.radians(total_angle_degrees / count)
             center_pt = self._pt(center)
             copies = []
-            # 整个阵列打包为一个撤销组；循环内逐调用重试避免部分完成后重复
+            # Gói toàn bộ mảng thành một nhóm hoàn tác; thử lại từng lời gọi trong vòng lặp để tránh lặp lại phần đã xong
             with self._undo_group():
                 for i in range(1, count):
                     copy = self._call_attr(src, "Copy")
@@ -1395,146 +1396,146 @@ class CADController:
                     copies.append(copy)
             return copies
         except Exception as e:
-            logger.error(f"环形阵列失败: {str(e)}")
+            logger.error(f"Tạo mảng tròn thất bại: {str(e)}")
             return []
 
     def undo(self) -> bool:
-        """撤销上一步操作"""
+        """Hoàn tác thao tác trước đó"""
         if not self.is_running():
             return False
         try:
-            # 注意：实测 AutoCAD 上 "_.UNDO 1" 带前缀+数字参数的组合不生效，
-            # 纯英文命令名 "UNDO 1" 可靠（中文版CAD原生支持英文命令名）
+            # Lưu ý: thực đo trên AutoCAD tổ hợp "_.UNDO 1" có tiền tố + tham số số không có tác dụng,
+            # tên lệnh tiếng Anh thuần "UNDO 1" đáng tin cậy (các bản CAD bản địa hóa vẫn hỗ trợ tên lệnh tiếng Anh)
             self._call_attr(self.doc, "SendCommand", "UNDO 1\n")
-            # SendCommand是异步的：等待命令处理完再返回，确保后续调用能看到撤销结果
+            # SendCommand là bất đồng bộ: chờ lệnh xử lý xong mới trả về để các lời gọi sau thấy được kết quả hoàn tác
             time.sleep(self.command_delay)
             return True
         except Exception as e:
-            logger.error(f"撤销失败: {str(e)}")
+            logger.error(f"Hoàn tác thất bại: {str(e)}")
             return False
 
     def redo(self) -> bool:
-        """重做被撤销的操作"""
+        """Làm lại thao tác vừa hoàn tác"""
         if not self.is_running():
             return False
         try:
             self._call_attr(self.doc, "SendCommand", "_.REDO\n")
-            # SendCommand是异步的：等待命令处理完再返回
+            # SendCommand là bất đồng bộ: chờ lệnh xử lý xong mới trả về
             time.sleep(self.command_delay)
             return True
         except Exception as e:
-            logger.error(f"重做失败: {str(e)}")
+            logger.error(f"Làm lại thất bại: {str(e)}")
             return False
 
-    # ==================== 图层操作 ====================
+    # ==================== Thao tác lớp (Layer) ====================
 
     def set_current_layer(self, layer_name: str) -> bool:
-        """切换当前图层（图层必须已存在）"""
+        """Chuyển lớp hiện hành (lớp phải đã tồn tại)"""
         if not self.is_running():
             return False
         try:
-            # Layers集合与Name读取都可能被忙碌的CAD拒绝，逐调用重试
+            # Cả tập hợp Layers lẫn việc đọc Name đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi
             layers = self._call(getattr, self.doc, "Layers")
             for i in range(self._call(getattr, layers, "Count")):
                 layer = self._call_attr(layers, "Item", i)
-                # CAD图层名不区分大小写，比较时忽略大小写
+                # Tên lớp CAD không phân biệt hoa thường, bỏ qua hoa thường khi so sánh
                 if self._call(getattr, layer, "Name").casefold() == layer_name.casefold():
                     self._call(setattr, self.doc, "ActiveLayer", layer)
-                    logger.info(f"已切换当前图层: {layer_name}")
+                    logger.info(f"Đã chuyển lớp hiện hành sang: {layer_name}")
                     return True
-            logger.warning(f"图层 {layer_name} 不存在")
+            logger.warning(f"Lớp {layer_name} không tồn tại")
             return False
         except Exception as e:
-            logger.error(f"切换图层失败: {str(e)}")
+            logger.error(f"Chuyển lớp thất bại: {str(e)}")
             return False
 
-    # ==================== 图纸管理 ====================
+    # ==================== Quản lý bản vẽ ====================
 
     def new_drawing(self) -> bool:
-        """新建图纸文档"""
+        """Tạo tài liệu bản vẽ mới"""
         if self.app is None:
             return False
         try:
-            # Documents集合的获取与Add调用都可能被忙碌的CAD拒绝，逐调用重试
+            # Cả việc lấy tập hợp Documents lẫn lời gọi Add đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi
             docs = self._call(getattr, self.app, "Documents")
             self.doc = self._call_attr(docs, "Add")
-            # Name读取可能被刚创建文档的CAD短暂拒绝，需带重试（否则日志误显示None）
-            logger.info(f"已新建文档: {self._call(getattr, self.doc, 'Name')}")
+            # Đọc Name có thể bị CAD mới tạo tài liệu tạm thời từ chối, cần có thử lại (tránh log hiện nhầm None)
+            logger.info(f"Đã tạo tài liệu mới: {self._call(getattr, self.doc, 'Name')}")
             return self.doc is not None
         except Exception as e:
-            logger.error(f"新建文档失败: {str(e)}")
+            logger.error(f"Tạo tài liệu mới thất bại: {str(e)}")
             return False
 
     def open_drawing(self, file_path: str) -> bool:
-        """打开已有图纸文件"""
+        """Mở tệp bản vẽ đã có"""
         if self.app is None:
             return False
-        # 相对路径必须先转为绝对路径：Documents.Open在CAD进程内解析路径，
-        # 其工作目录与MCP服务器的工作目录通常不同（与save_drawing同理）
+        # Đường dẫn tương đối phải chuyển sang tuyệt đối trước: Documents.Open phân giải đường dẫn trong tiến trình CAD,
+        # mà thư mục làm việc của CAD thường khác thư mục làm việc của máy chủ MCP (tương tự save_drawing)
         file_path = os.path.abspath(file_path)
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f"文件不存在: {file_path}")
+            raise FileNotFoundError(f"Tệp không tồn tại: {file_path}")
         try:
-            # 打开后CAD短暂忙碌，调用级重试确保Open本身成功
+            # Sau khi mở CAD tạm thời bận, thử lại cấp lời gọi đảm bảo bản thân Open thành công
             docs = self._call(getattr, self.app, "Documents")
             opened = self._call_attr(docs, "Open", file_path)
-            # 部分CAD的Documents.Open不返回文档对象，回退到取活动文档
+            # Một số phần mềm CAD không trả về đối tượng tài liệu từ Documents.Open, quay về lấy ActiveDocument
             self.doc = opened if opened is not None else self._call(getattr, self.app, "ActiveDocument")
-            logger.info(f"已打开文档: {file_path}")
+            logger.info(f"Đã mở tài liệu: {file_path}")
             return True
         except Exception as e:
-            logger.error(f"打开文档失败: {str(e)}")
+            logger.error(f"Mở tài liệu thất bại: {str(e)}")
             return False
 
     def close_drawing(self, save: bool = False) -> bool:
-        """关闭当前文档（save=False 时不保存直接关闭）"""
+        """Đóng tài liệu hiện tại (khi save=False sẽ đóng thẳng không lưu)"""
         if not self.is_running():
             return False
         try:
-            # 关闭期间CAD忙碌会拒绝调用，调用级重试确保Close本身成功
+            # Trong lúc đóng CAD bận sẽ từ chối lời gọi, thử lại cấp lời gọi đảm bảo bản thân Close thành công
             self._call_attr(self.doc, "Close", save)
-            # 尝试切换到其他已打开的文档
+            # Thử chuyển sang tài liệu đang mở khác
             try:
                 self.doc = self._call(getattr, self.app, "ActiveDocument")
             except Exception:
                 self.doc = None
-            logger.info(f"已关闭当前文档（保存: {save}）")
+            logger.info(f"Đã đóng tài liệu hiện tại (lưu: {save})")
             return True
         except Exception as e:
-            logger.error(f"关闭文档失败: {str(e)}")
+            logger.error(f"Đóng tài liệu thất bại: {str(e)}")
             return False
 
-    # ==================== 图块操作 ====================
+    # ==================== Thao tác khối (Block) ====================
 
     def create_block(self, name: str, base_point: List[float] = None):
-        """创建图块定义（若同名图块已存在则直接返回它）
+        """Tạo định nghĩa khối (nếu khối cùng tên đã tồn tại thì trả về ngay khối đó)
 
-        注意：图块内部实体可通过 send_command 执行 BEDIT 等命令编辑。
+        Lưu ý: Các thực thể bên trong khối có thể chỉnh sửa thông qua send_command thực thi lệnh như BEDIT.
         """
         if not self.is_running():
             return None
         try:
-            # 检查同名图块是否已存在（Blocks集合与Name读取都可能被忙碌的CAD拒绝，逐调用重试）
+            # Kiểm tra xem khối cùng tên đã tồn tại chưa (tập hợp Blocks và đọc Name đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi)
             blocks = self._call(getattr, self.doc, "Blocks")
             for i in range(self._call(getattr, blocks, "Count")):
                 block = self._call_attr(blocks, "Item", i)
                 if self._call(getattr, block, "Name") == name:
                     return block
-            # 独立撤销组，忙碌时在调用级自动重试
+            # Nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận
             with self._undo_group():
                 return self._call_attr(blocks, "Add", self._pt(base_point or (0, 0, 0)), name)
         except Exception as e:
-            logger.error(f"创建图块失败: {str(e)}")
+            logger.error(f"Tạo khối thất bại: {str(e)}")
             return None
 
     def insert_block(self, name: str, position: List[float],
                      x_scale: float = 1.0, y_scale: float = 1.0, z_scale: float = 1.0,
                      rotation_degrees: float = 0.0):
-        """在模型空间插入图块引用"""
+        """Chèn tham chiếu khối vào không gian mô hình"""
         if not self.is_running():
             return None
         try:
-            # 独立撤销组，忙碌时在调用级自动重试
+            # Nhóm hoàn tác độc lập, tự động thử lại cấp lời gọi khi bận
             with self._undo_group():
                 block_ref = self._call_attr(
                     self._ms(), "InsertBlock",
@@ -1543,49 +1544,49 @@ class CADController:
                 )
             return block_ref
         except Exception as e:
-            logger.error(f"插入图块失败: {str(e)}")
+            logger.error(f"Chèn khối thất bại: {str(e)}")
             return None
 
     def list_blocks(self) -> List[Dict[str, Any]]:
-        """列出当前图纸中的用户图块定义"""
+        """Liệt kê các định nghĩa khối của người dùng trong bản vẽ hiện tại"""
         if not self.is_running():
             return []
         blocks = []
         try:
-            # Blocks集合与Name读取都可能被忙碌的CAD拒绝，逐调用重试
+            # Cả tập hợp Blocks lẫn đọc Name đều có thể bị CAD đang bận từ chối, thử lại từng lời gọi
             block_set = self._call(getattr, self.doc, "Blocks")
             for i in range(self._call(getattr, block_set, "Count")):
                 block = self._call_attr(block_set, "Item", i)
                 name = str(self._call(getattr, block, "Name"))
-                # 跳过布局占位块（*Model_Space、*Paper_Space等匿名块）
+                # Bỏ qua các khối giữ chỗ bố cục (khối ẩn danh như *Model_Space, *Paper_Space)
                 if not name.startswith("*"):
                     blocks.append({
                         "name": name,
                         "entity_count": self._safe_attr(block, "Count", 0),
                     })
         except Exception as e:
-            logger.error(f"列出图块失败: {str(e)}")
+            logger.error(f"Liệt kê khối thất bại: {str(e)}")
         return blocks
 
-    # ==================== 命令直通 ====================
+    # ==================== Truyền lệnh trực tiếp ====================
 
     def send_command(self, command: str) -> bool:
-        """直通CAD命令行执行任意命令（如 "_.ZOOM E"）
+        """Gửi trực tiếp lệnh bất kỳ tới dòng lệnh CAD (ví dụ "_.ZOOM E")
 
-        这是功能逃生舱：任何未封装为工具的CAD命令都可以通过它执行。
+        Đây là lối thoát chức năng: mọi lệnh CAD chưa được đóng gói thành công cụ đều có thể thực thi qua đây.
         """
         if not self.is_running():
             return False
         try:
-            # 若命令未以回车/空格结尾则补一个回车，确保命令被提交执行
+            # Nếu lệnh chưa kết thúc bằng dấu xuống dòng/khoảng trắng thì bổ sung một ký tự xuống dòng để đảm bảo lệnh được gửi đi
             if not command.endswith(("\n", "\r", " ")):
                 command += "\n"
-            # SendCommand本身可能被忙碌的CAD拒绝，调用级重试确保命令入队
+            # Bản thân SendCommand có thể bị CAD đang bận từ chối, thử lại cấp lời gọi đảm bảo lệnh vào hàng đợi
             self._call_attr(self.doc, "SendCommand", command)
-            # SendCommand是异步的：等待命令执行（如ZOOM/保存类命令执行中，
-            # 后续的SaveAs等操作会报错），时长由配置command_delay控制
+            # SendCommand là bất đồng bộ: chờ lệnh thực thi (ví dụ khi lệnh ZOOM/lưu đang chạy,
+            # thao tác SaveAs tiếp theo sẽ báo lỗi), thời lượng do cấu hình command_delay điều khiển
             time.sleep(self.command_delay)
             return True
         except Exception as e:
-            logger.error(f"执行命令失败: {str(e)}")
+            logger.error(f"Thực thi lệnh thất bại: {str(e)}")
             return False

@@ -10,9 +10,9 @@ from pydantic import Field
 
 sys.dont_write_bytecode = True
 
-# 兼容两种运行方式：
-# 1. 作为包导入（pip install 后，模块名为 src.server）
-# 2. 直接运行 src/server.py（保持旧的 Claude/Cursor 配置可用）
+# Tương thích hai cách chạy:
+# 1. Import dưới dạng package (sau khi pip install, tên module là src.server)
+# 2. Chạy trực tiếp src/server.py (giữ tương thích với cấu hình Claude/Cursor cũ)
 if __package__:
     from .cad_controller import CADController
     from .config import get_config
@@ -31,29 +31,29 @@ from mcp.server.fastmcp import FastMCP, Context
 from mcp.types import ToolAnnotations, ImageContent, TextContent
 from logging.handlers import RotatingFileHandler
 
-# 配置Windows环境下的UTF-8编码
-# 注意：IDLE 等嵌入式解释器会把 sys.stdin/stdout/stderr 换成 io.TextIOBase 子类
-# （如 idlelib.run.StdInputFile），这类对象没有 reconfigure()，直接调用会抛
-# AttributeError 让服务器根本起不来，所以先做能力检测再设置。
+# Cấu hình mã hóa UTF-8 trên môi trường Windows
+# Lưu ý: các trình thông dịch nhúng như IDLE sẽ thay sys.stdin/stdout/stderr bằng lớp con io.TextIOBase
+# (như idlelib.run.StdInputFile), các đối tượng này không có reconfigure(), gọi trực tiếp sẽ ném
+# AttributeError khiến máy chủ không thể khởi động, vì vậy cần kiểm tra trước khi thiết lập.
 if sys.platform == "win32" and os.environ.get('PYTHONIOENCODING') is None:
     for _stream in (sys.stdin, sys.stdout, sys.stderr):
         _reconfigure = getattr(_stream, "reconfigure", None)
         if _reconfigure is not None:
             try:
                 _reconfigure(encoding="utf-8")
-            except Exception:  # 个别流不支持切换编码时忽略，不能因此启动失败
+            except Exception:  # Bỏ qua nếu luồng riêng lẻ không hỗ trợ đổi mã hóa, tránh làm lỗi khởi động
                 pass
 
 config = get_config()
 
 def _build_log_handlers() -> list:
-    """构建日志handler：控制台 + 滚动文件
+    """Xây dựng các handler ghi log: console + tệp xoay vòng
 
-    日志文件优先写源码目录（开发期就近查看、路径不随启动目录漂移）；
-    pip安装到site-packages等无写权限的位置时回退到用户目录，
-    避免FileHandler构造即抛PermissionError导致服务器启动失败。
-    使用滚动文件（单文件5MB、保留2个备份）防止长期运行日志无限增长。
-    StreamHandler默认输出到stderr，stdio传输模式下不会污染协议数据。
+    Ưu tiên ghi tệp log vào thư mục mã nguồn (thuận tiện xem khi phát triển, đường dẫn không trôi theo thư mục khởi chạy);
+    khi cài bằng pip vào vị trí không có quyền ghi như site-packages thì lùi về thư mục người dùng,
+    tránh việc khởi tạo FileHandler ném PermissionError làm máy chủ khởi động thất bại.
+    Sử dụng tệp xoay vòng (5MB mỗi tệp, giữ lại 2 bản sao lưu) để tránh log phình to vô hạn khi chạy lâu dài.
+    StreamHandler mặc định xuất ra stderr nên không làm bẩn dữ liệu giao thức ở chế độ truyền tải stdio.
     """
     handlers = [logging.StreamHandler()]
     candidates = [
@@ -71,8 +71,8 @@ def _build_log_handlers() -> list:
     return handlers
 
 
-# 配置日志（必须在模块导入早期完成，且全进程只能有这一处basicConfig：
-# root已有handler时basicConfig会被静默忽略，详见src/__init__.py的说明）
+# Cấu hình logging (phải hoàn tất sớm khi import module, và toàn bộ tiến trình chỉ gọi basicConfig một lần tại đây:
+# nếu root logger đã có handler thì basicConfig sẽ bị bỏ qua âm thầm, xem thêm giải thích trong src/__init__.py)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -80,96 +80,96 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger('mcp_cad_server')
-logger.info("启动 CAD MCP 服务器")
+logger.info("Khởi động máy chủ CAD MCP")
 
 SERVER_NAME = config["server"]["name"]
 SERVER_VERSION = config["server"].get("version", "2.0.0")
 
 PROMPT_TEMPLATE = """
-助手的目标是演示如何使用CAD MCP服务。通过这个服务，您可以直接在对话中控制CAD软件，创建和修改图形。
+Mục tiêu của trợ lý là hướng dẫn cách sử dụng dịch vụ CAD MCP. Thông qua dịch vụ này, bạn có thể điều khiển phần mềm CAD trực tiếp trong cuộc trò chuyện để tạo và chỉnh sửa bản vẽ.
 
 <cad-mcp>
 
-提示：
-这个服务器提供了一个名为"cad-assistant"的预设提示，帮助用户通过自然语言指令控制CAD。用户可以要求绘制各种形状、修改图形元素或保存图纸。
+Lời nhắc (Prompt):
+Máy chủ này cung cấp một lời nhắc dựng sẵn có tên "cad-assistant" giúp người dùng điều khiển CAD bằng lệnh ngôn ngữ tự nhiên. Người dùng có thể yêu cầu vẽ nhiều hình dạng khác nhau, chỉnh sửa đối tượng đồ họa hoặc lưu bản vẽ.
 
-资源：
-此服务器提供"drawing://current"资源，表示当前的CAD图纸状态（会话记录 + 来自CAD文档的实时统计）。
+Tài nguyên (Resource):
+Máy chủ này cung cấp tài nguyên "drawing://current", biểu thị trạng thái bản vẽ CAD hiện tại (lịch sử phiên làm việc + thống kê thời gian thực từ tài liệu CAD).
 
-工具：
+Công cụ (Tools):
 
-此服务器提供以下几类工具：
+Máy chủ này cung cấp các nhóm công cụ sau:
 
-基本绘图工具：
-"draw_line": 在CAD中绘制直线
-"draw_circle": 在CAD中绘制圆
-"draw_arc": 在CAD中绘制弧
-"draw_ellipse": 在CAD中绘制椭圆
-"draw_polyline": 在CAD中绘制多段线
-"draw_rectangle": 在CAD中绘制矩形
-"draw_text": 在CAD中添加文本
-"draw_hatch": 在CAD中绘制填充
-"add_dimension": 在CAD中添加线性标注
+Công cụ vẽ cơ bản:
+"draw_line": Vẽ đoạn thẳng trong CAD
+"draw_circle": Vẽ đường tròn trong CAD
+"draw_arc": Vẽ cung tròn trong CAD
+"draw_ellipse": Vẽ hình elip trong CAD
+"draw_polyline": Vẽ đường đa tuyến (polyline) trong CAD
+"draw_rectangle": Vẽ hình chữ nhật trong CAD
+"draw_text": Thêm văn bản trong CAD
+"draw_hatch": Vẽ tô mặt cắt (hatch) trong CAD
+"add_dimension": Thêm ghi kích thước tuyến tính trong CAD
 
-查询工具（了解图纸实际内容）：
-"list_layers": 列出所有图层
-"list_entities": 列出模型空间中的实体（返回可编辑的句柄）
-"get_entity_properties": 按句柄查询实体详细属性
-"screenshot": 截取CAD窗口画面确认绘图效果
+Công cụ truy vấn (nắm bắt nội dung thực tế của bản vẽ):
+"list_layers": Liệt kê tất cả các lớp (layer)
+"list_entities": Liệt kê các thực thể trong không gian mô hình (trả về handle để chỉnh sửa)
+"get_entity_properties": Tra cứu thuộc tính chi tiết của thực thể theo handle
+"screenshot": Chụp ảnh màn hình cửa sổ CAD để kiểm tra kết quả vẽ
 
-编辑工具（通过句柄操作已有实体）：
-"erase_entity": 删除实体
-"move_entity": 移动实体
-"rotate_entity": 旋转实体
-"scale_entity": 缩放实体
-"copy_entity": 复制实体
-"mirror_entity": 镜像实体
-"offset_entity": 偏移实体
-"array_linear_entity" / "array_polar_entity": 阵列
-"undo" / "redo": 撤销/重做
+Công cụ chỉnh sửa (thao tác thực thể đã có thông qua handle):
+"erase_entity": Xóa thực thể
+"move_entity": Di chuyển thực thể
+"rotate_entity": Xoay thực thể
+"scale_entity": Phóng to/thu nhỏ thực thể
+"copy_entity": Sao chép thực thể
+"mirror_entity": Lấy đối xứng thực thể
+"offset_entity": Tạo đường song song (offset) thực thể
+"array_linear_entity" / "array_polar_entity": Tạo mảng (array)
+"undo" / "redo": Hoàn tác / làm lại
 
-图层与图纸管理：
-"create_layer" / "set_current_layer": 图层管理
-"new_drawing" / "open_drawing" / "close_drawing" / "save_drawing": 图纸管理
-"create_block" / "insert_block" / "list_blocks": 图块操作
-"send_command": 直通CAD命令行执行任意命令
+Quản lý lớp và bản vẽ:
+"create_layer" / "set_current_layer": Quản lý lớp
+"new_drawing" / "open_drawing" / "close_drawing" / "save_drawing": Quản lý bản vẽ
+"create_block" / "insert_block" / "list_blocks": Thao tác với khối (block)
+"send_command": Gửi trực tiếp lệnh bất kỳ tới dòng lệnh CAD
 
-遗留接口：
-"process_command": 处理自然语言命令并转换为CAD操作（推荐优先使用上述结构化工具）
+Giao diện cũ (Legacy):
+"process_command": Xử lý lệnh ngôn ngữ tự nhiên và chuyển thành thao tác CAD (khuyên ưu tiên sử dụng các công cụ có cấu trúc ở trên)
 
 </cad-mcp>
 
-请以友好的方式开始演示，例如："嗨！今天我将向您展示如何使用CAD MCP服务。通过这个服务，您可以直接在我们的对话中控制CAD软件，无需手动操作界面。让我们开始吧！"
+Hãy bắt đầu phần giới thiệu một cách thân thiện, ví dụ: "Xin chào! Hôm nay tôi sẽ hướng dẫn bạn cách sử dụng dịch vụ CAD MCP. Với dịch vụ này, bạn có thể điều khiển phần mềm CAD trực tiếp ngay trong cuộc trò chuyện mà không cần thao tác thủ công trên giao diện. Hãy cùng bắt đầu nhé!"
 """
 
-# 服务器级使用说明（随 initialize 响应下发给客户端）
-SERVER_INSTRUCTIONS = """CAD MCP 服务器：通过 MCP 工具控制 Windows 上的 AutoCAD / 浩辰CAD / 中望CAD。
+# Hướng dẫn sử dụng cấp máy chủ (gửi kèm phản hồi initialize tới client)
+SERVER_INSTRUCTIONS = """Máy chủ CAD MCP: Điều khiển AutoCAD / GstarCAD / ZWCAD trên Windows thông qua các công cụ MCP.
 
-使用要点：
-- 首次调用工具时若 CAD 未运行会自动启动（可能需要约20秒），期间会有进度提示
-- 绘图/编辑工具返回 entity_handles（实体句柄），可用于后续编辑与查询
-- 颜色参数支持 ACI 索引(1-256)或中英文颜色名称，不指定则保持随层(ByLayer)
-- 绘图后建议用 screenshot 截图确认效果，用 list_entities 查询图纸实际内容
-- send_command 可直通 CAD 命令行，执行任何未封装为工具的 CAD 命令
+Lưu ý sử dụng:
+- Lần đầu gọi công cụ nếu CAD chưa chạy thì máy chủ sẽ tự động khởi động (có thể mất khoảng 20 giây) và gửi thông báo tiến độ trong lúc chờ
+- Các công cụ vẽ/chỉnh sửa trả về entity_handles (handle của thực thể), dùng để chỉnh sửa và truy vấn về sau
+- Tham số màu hỗ trợ mã màu ACI (1-256) hoặc tên màu, nếu không chỉ định sẽ giữ màu theo lớp (ByLayer)
+- Sau khi vẽ nên dùng screenshot để chụp ảnh xác nhận kết quả và dùng list_entities để kiểm tra nội dung thực tế của bản vẽ
+- send_command cho phép gửi thẳng tới dòng lệnh CAD để thực thi bất kỳ lệnh CAD nào chưa được đóng gói thành công cụ
 """
 
-# ==================== 参数类型（保留原版 schema 的坐标约束） ====================
+# ==================== Kiểu tham số (giữ nguyên ràng buộc tọa độ của schema gốc) ====================
 
-# 坐标点：2~3个数字 [x, y] 或 [x, y, z]
-Point = Annotated[List[float], Field(min_length=2, max_length=3, description="坐标 [x, y] 或 [x, y, z]")]
-# 点集：至少2个坐标点
-Points = Annotated[List[Point], Field(min_length=2, description="点集 [[x1,y1], [x2,y2], ...]（每个点2~3个分量）")]
-# 填充边界点集：至少3个坐标点
-HatchPoints = Annotated[List[Point], Field(min_length=3, description="填充边界点集（至少3个点）")]
-# 正数参数（半径/字高/缩放系数等：CAD对0和负值会直接报错，在schema层提前拦截）
-PosFloat = Annotated[float, Field(gt=0, description="正数")]
-# 阵列数量（含原实体）：下限2（<2没有阵列意义），上限防止误操作生成海量实体卡死图纸
-ArrayCount = Annotated[int, Field(ge=2, le=10000, description="阵列总数（含原实体，2~10000）")]
+# Điểm tọa độ: 2~3 số [x, y] hoặc [x, y, z]
+Point = Annotated[List[float], Field(min_length=2, max_length=3, description="Tọa độ [x, y] hoặc [x, y, z]")]
+# Tập hợp điểm: ít nhất 2 điểm tọa độ
+Points = Annotated[List[Point], Field(min_length=2, description="Tập hợp điểm [[x1,y1], [x2,y2], ...] (mỗi điểm gồm 2~3 thành phần)")]
+# Tập hợp điểm đường biên hatch: ít nhất 3 điểm tọa độ
+HatchPoints = Annotated[List[Point], Field(min_length=3, description="Tập hợp điểm đường biên tô mặt cắt (ít nhất 3 điểm)")]
+# Tham số số dương (bán kính/chiều cao chữ/hệ số tỉ lệ...: CAD sẽ báo lỗi trực tiếp với giá trị 0 hoặc âm, chặn sớm ở tầng schema)
+PosFloat = Annotated[float, Field(gt=0, description="Số dương")]
+# Số lượng mảng (bao gồm thực thể gốc): tối thiểu 2 (<2 không có ý nghĩa tạo mảng), giới hạn trên tránh thao tác nhầm tạo quá nhiều thực thể làm treo bản vẽ
+ArrayCount = Annotated[int, Field(ge=2, le=10000, description="Tổng số phần tử mảng (bao gồm thực thể gốc, 2~10000)")]
 
 
 class CADService:
     def __init__(self):
-        """初始化CAD服务"""
+        """Khởi tạo dịch vụ CAD"""
         self.controller = CADController()
         self.nlp_processor = NLPProcessor()
         self.drawing_state = {
@@ -178,23 +178,23 @@ class CADService:
             "last_command": "",
             "last_result": ""
         }
-        logger.info("CAD服务已初始化")
+        logger.info("Dịch vụ CAD đã được khởi tạo")
 
     @staticmethod
     def _handle(entity) -> Optional[str]:
-        """安全读取实体句柄"""
+        """Đọc an toàn handle của thực thể"""
         return CADController._safe_attr(entity, "Handle")
 
     def start_cad(self):
-        """启动CAD"""
+        """Khởi động CAD"""
         return self.controller.start_cad()
 
     def draw_line(self, start_point, end_point, layer=None, color=None, lineweight=None):
-        """绘制直线"""
+        """Vẽ đoạn thẳng"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_line(start_point, end_point, current_layer, color, lineweight)
@@ -208,19 +208,19 @@ class CADService:
                 "color": color,
                 "lineweight": lineweight
             })
-            self.drawing_state["last_command"] = f"绘制直线从{start_point}到{end_point}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ đoạn thẳng từ {start_point} đến {end_point}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_circle(self, center, radius, layer=None, color=None, lineweight=None):
-        """绘制圆"""
+        """Vẽ đường tròn"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_circle(center, radius, current_layer, color, lineweight)
@@ -234,19 +234,19 @@ class CADService:
                 "color": color,
                 "lineweight": lineweight
             })
-            self.drawing_state["last_command"] = f"绘制圆，中心点{center}，半径{radius}，图层{current_layer}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ đường tròn, tâm {center}, bán kính {radius}, lớp {current_layer}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_arc(self, center, radius, start_angle, end_angle, layer=None, color=None, lineweight=None):
-        """绘制弧"""
+        """Vẽ cung tròn"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_arc(center, radius, start_angle, end_angle, current_layer, color, lineweight)
@@ -263,19 +263,19 @@ class CADService:
                 "color": color,
                 "lineweight": lineweight
             })
-            self.drawing_state["last_command"] = f"绘制弧，中心点{center}，半径{radius}，起始角度{start_angle}，结束角度{end_angle}，图层{current_layer}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ cung tròn, tâm {center}, bán kính {radius}, góc bắt đầu {start_angle}, góc kết thúc {end_angle}, lớp {current_layer}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_ellipse(self, center, major_axis, minor_axis, rotation=0, layer=None, color=None, lineweight=None):
-        """绘制椭圆"""
+        """Vẽ hình elip"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_ellipse(center, major_axis, minor_axis, rotation, current_layer, color, lineweight)
@@ -292,19 +292,19 @@ class CADService:
                 "color": color,
                 "lineweight": lineweight
             })
-            self.drawing_state["last_command"] = f"绘制椭圆，中心点{center}，长轴{major_axis}，短轴{minor_axis}，旋转角度{rotation}，图层{current_layer}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ hình elip, tâm {center}, trục lớn {major_axis}, trục nhỏ {minor_axis}, góc xoay {rotation}, lớp {current_layer}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_polyline(self, points, closed=False, layer=None, color=None, lineweight=None):
-        """绘制多段线"""
+        """Vẽ đường đa tuyến (polyline)"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_polyline(points, closed, current_layer, color, lineweight)
@@ -318,19 +318,19 @@ class CADService:
                 "color": color,
                 "lineweight": lineweight
             })
-            self.drawing_state["last_command"] = f"绘制多段线，点集{points}，{'闭合' if closed else '不闭合'}，图层{current_layer}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ đường đa tuyến, tập điểm {points}, {'khép kín' if closed else 'không khép kín'}, lớp {current_layer}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_rectangle(self, corner1, corner2, layer=None, color=None, lineweight=None):
-        """绘制矩形"""
+        """Vẽ hình chữ nhật"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_rectangle(corner1, corner2, current_layer, color, lineweight)
@@ -344,19 +344,19 @@ class CADService:
                 "color": color,
                 "lineweight": lineweight
             })
-            self.drawing_state["last_command"] = f"绘制矩形，对角点{corner1}和{corner2}，图层{current_layer}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ hình chữ nhật, hai góc đối diện {corner1} và {corner2}, lớp {current_layer}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_text(self, position, text, height=2.5, rotation=0, layer=None, color=None):
-        """添加文本"""
+        """Thêm văn bản"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_text(position, text, height, rotation, current_layer, color)
@@ -371,19 +371,19 @@ class CADService:
                 "layer": current_layer,
                 "color": color
             })
-            self.drawing_state["last_command"] = f"添加文本'{text}'，位置{position}，高度{height}，旋转{rotation}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Thêm văn bản '{text}', vị trí {position}, chiều cao {height}, góc xoay {rotation}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def draw_hatch(self, points, pattern_name="SOLID", scale=1.0, layer=None, color=None):
-        """绘制填充"""
+        """Vẽ tô mặt cắt (hatch)"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.draw_hatch(points, pattern_name, scale, current_layer, color)
@@ -397,19 +397,19 @@ class CADService:
                 "layer": current_layer,
                 "color": color
             })
-            self.drawing_state["last_command"] = f"绘制填充，点集{points}，图案{pattern_name}，比例{scale}，图层{current_layer}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Vẽ tô mặt cắt, tập điểm {points}, mẫu {pattern_name}, tỉ lệ {scale}, lớp {current_layer}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def add_dimension(self, start_point, end_point, text_position=None, textheight=5, layer=None, color=None):
-        """添加线性标注"""
+        """Thêm ghi kích thước tuyến tính"""
         if not self.controller.is_running():
             self.start_cad()
 
-        # 使用当前图层或指定图层
+        # Sử dụng lớp hiện tại hoặc lớp được chỉ định
         current_layer = layer or self.drawing_state["current_layer"]
 
         result = self.controller.add_dimension(start_point, end_point, text_position, textheight, current_layer, color)
@@ -424,56 +424,56 @@ class CADService:
                 "layer": current_layer,
                 "color": color
             })
-            self.drawing_state["last_command"] = f"添加标注从{start_point}到{end_point}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Thêm ghi kích thước từ {start_point} đến {end_point}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def save_drawing(self, file_path):
-        """保存图纸"""
+        """Lưu bản vẽ"""
         if not self.controller.is_running():
             return False
 
         result = self.controller.save_drawing(file_path)
         if result:
-            self.drawing_state["last_command"] = f"保存图纸到{file_path}"
-            self.drawing_state["last_result"] = "成功"
+            self.drawing_state["last_command"] = f"Lưu bản vẽ tới {file_path}"
+            self.drawing_state["last_result"] = "Thành công"
         else:
-            self.drawing_state["last_result"] = "失败"
+            self.drawing_state["last_result"] = "Thất bại"
 
         return result
 
     def process_command(self, command: str) -> Dict[str, Any]:
-        """处理自然语言命令（遗留接口，推荐客户端直接调用结构化绘图工具）"""
+        """Xử lý lệnh ngôn ngữ tự nhiên (giao diện cũ, khuyến nghị client gọi trực tiếp các công cụ vẽ có cấu trúc)"""
         if not self.controller.is_running():
             self.start_cad()
-        # 使用NLP处理器解析命令
+        # Dùng bộ xử lý NLP để phân tích lệnh
         parsed_command = self.nlp_processor.process_command(command)
         command_type = parsed_command.get("type")
         try:
-            # 未识别的命令明确返回失败（此前会静默返回None）
+            # Trả về thất bại rõ ràng cho lệnh không nhận diện được (trước đây trả về None âm thầm)
             if command_type in (None, "unknown", "error"):
                 return {
                     "success": False,
-                    "message": parsed_command.get("error") or "无法识别的命令",
+                    "message": parsed_command.get("error") or "Không thể nhận diện lệnh",
                     "original_command": command
                 }
 
-            # 统一解析颜色：命令文本中提取的颜色优先于解析结果中的颜色参数
+            # Phân giải màu thống nhất: màu trích xuất từ văn bản lệnh được ưu tiên hơn tham số màu trong kết quả phân tích
             color = parsed_command.get("color")
             color_rgb = self.nlp_processor.extract_color_from_command(command)
             if color_rgb is not None:
                 color = color_rgb
-            # 获取线宽参数
+            # Lấy tham số độ dày nét
             lineweight = parsed_command.get("lineweight")
 
             if command_type == "draw_line":
                 result = self.draw_line(parsed_command.get("start_point"), parsed_command.get("end_point"), None, color, lineweight)
                 return {
                     "success": result is not None,
-                    "message": "直线已绘制" if result else "绘制直线失败",
+                    "message": "Đã vẽ đoạn thẳng" if result else "Vẽ đoạn thẳng thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -481,7 +481,7 @@ class CADService:
                 result = self.draw_circle(parsed_command.get("center"), parsed_command.get("radius"), None, color, lineweight)
                 return {
                     "success": result is not None,
-                    "message": "圆已绘制" if result else "绘制圆失败",
+                    "message": "Đã vẽ đường tròn" if result else "Vẽ đường tròn thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -490,17 +490,17 @@ class CADService:
                 radius = parsed_command.get("radius")
                 start_angle = parsed_command.get("start_angle")
                 end_angle = parsed_command.get("end_angle")
-                # 确保所有必要参数都存在且有效
+                # Đảm bảo tất cả tham số bắt buộc đều tồn tại và hợp lệ
                 if center is None or radius is None or start_angle is None or end_angle is None:
                     return {
                         "success": False,
-                        "message": "绘制圆弧失败：缺少必要参数",
-                        "error": "缺少必要参数：中心点、半径、起始角度或结束角度"
+                        "message": "Vẽ cung tròn thất bại: thiếu tham số bắt buộc",
+                        "error": "Thiếu tham số bắt buộc: tâm, bán kính, góc bắt đầu hoặc góc kết thúc"
                     }
                 result = self.draw_arc(center, radius, start_angle, end_angle, None, color, lineweight)
                 return {
                     "success": result is not None,
-                    "message": "圆弧已绘制" if result else "绘制圆弧失败",
+                    "message": "Đã vẽ cung tròn" if result else "Vẽ cung tròn thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -508,18 +508,18 @@ class CADService:
                 center = parsed_command.get("center")
                 major_axis = parsed_command.get("major_axis")
                 minor_axis = parsed_command.get("minor_axis")
-                rotation = parsed_command.get("rotation", 0)  # 默认旋转角度为0
-                # 确保所有必要参数都存在且有效
+                rotation = parsed_command.get("rotation", 0)  # Góc xoay mặc định là 0
+                # Đảm bảo tất cả tham số bắt buộc đều tồn tại và hợp lệ
                 if center is None or major_axis is None or minor_axis is None:
                     return {
                         "success": False,
-                        "message": "绘制椭圆失败：缺少必要参数",
-                        "error": "缺少必要参数：中心点、长轴或短轴"
+                        "message": "Vẽ hình elip thất bại: thiếu tham số bắt buộc",
+                        "error": "Thiếu tham số bắt buộc: tâm, trục lớn hoặc trục nhỏ"
                     }
                 result = self.draw_ellipse(center, major_axis, minor_axis, rotation, None, color, lineweight)
                 return {
                     "success": result is not None,
-                    "message": "椭圆已绘制" if result else "绘制椭圆失败",
+                    "message": "Đã vẽ hình elip" if result else "Vẽ hình elip thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -527,7 +527,7 @@ class CADService:
                 result = self.draw_rectangle(parsed_command.get("corner1"), parsed_command.get("corner2"), None, color, lineweight)
                 return {
                     "success": result is not None,
-                    "message": "矩形已绘制" if result else "绘制矩形失败",
+                    "message": "Đã vẽ hình chữ nhật" if result else "Vẽ hình chữ nhật thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -537,7 +537,7 @@ class CADService:
                 result = self.draw_text(parsed_command.get("position"), parsed_command.get("text"), height, rotation, None, color)
                 return {
                     "success": result is not None,
-                    "message": "文本已添加" if result else "添加文本失败",
+                    "message": "Đã thêm văn bản" if result else "Thêm văn bản thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -545,26 +545,26 @@ class CADService:
                 points = parsed_command.get("points")
                 pattern_name = parsed_command.get("pattern_name", "SOLID")
                 scale = parsed_command.get("scale", 1.0)
-                # 确保所有必要参数都存在且有效
+                # Đảm bảo tất cả tham số bắt buộc đều tồn tại và hợp lệ
                 if points is None or len(points) < 3:
                     return {
                         "success": False,
-                        "message": "绘制填充失败：缺少必要参数或点数不足",
-                        "error": "填充边界至少需要3个点"
+                        "message": "Vẽ tô mặt cắt thất bại: thiếu tham số bắt buộc hoặc không đủ điểm",
+                        "error": "Đường biên tô mặt cắt cần ít nhất 3 điểm"
                     }
                 result = self.draw_hatch(points, pattern_name, scale, None, color)
                 return {
                     "success": result is not None,
-                    "message": "填充已绘制" if result else "绘制填充失败",
+                    "message": "Đã vẽ tô mặt cắt" if result else "Vẽ tô mặt cắt thất bại",
                     "entity_id": self._handle(result)
                 }
 
             elif command_type == "add_dimension":
-                # 统一经由服务层（同时更新会话状态）
+                # Đi qua tầng dịch vụ thống nhất (đồng thời cập nhật trạng thái phiên)
                 result = self.add_dimension(parsed_command.get("start_point"), parsed_command.get("end_point"), parsed_command.get("text_position"))
                 return {
                     "success": result is not None,
-                    "message": "标注已添加" if result else "添加标注失败",
+                    "message": "Đã thêm ghi kích thước" if result else "Thêm ghi kích thước thất bại",
                     "entity_id": self._handle(result)
                 }
 
@@ -573,73 +573,73 @@ class CADService:
                 result = self.save_drawing(file_path)
                 return {
                     "success": result,
-                    "message": f"图纸已保存到 {file_path}" if result else f"保存图纸到 {file_path} 失败"
+                    "message": f"Đã lưu bản vẽ tới {file_path}" if result else f"Lưu bản vẽ tới {file_path} thất bại"
                 }
 
-            # 处理图层操作
+            # Xử lý thao tác lớp (layer)
             elif command_type == "create_layer":
                 layer_name = parsed_command.get("layer_name")
                 if not layer_name:
                     return {
                         "success": False,
-                        "message": "创建图层失败：未指定图层名称"
+                        "message": "Tạo lớp thất bại: chưa chỉ định tên lớp"
                     }
                 result = self.controller.create_layer(layer_name)  # , color
                 if result:
                     self.drawing_state["current_layer"] = layer_name
                 return {
                     "success": result,
-                    "message": f"图层 {layer_name} 已创建" if result else f"创建图层 {layer_name} 失败"
+                    "message": f"Đã tạo lớp {layer_name}" if result else f"Tạo lớp {layer_name} thất bại"
                 }
 
-            # 其他已知但暂不支持的命令类型
+            # Các loại lệnh đã biết khác nhưng tạm thời chưa hỗ trợ
             return {
                 "success": False,
-                "message": f"暂不支持的命令类型: {command_type}"
+                "message": f"Loại lệnh chưa được hỗ trợ: {command_type}"
             }
 
         except Exception as e:
             return {
                 "success": False,
-                "message": f"处理命令时出错: {str(e)}"
+                "message": f"Lỗi khi xử lý lệnh: {str(e)}"
             }
 
 
-# ==================== 服务实例与通用工具函数 ====================
+# ==================== Thực thể dịch vụ và hàm tiện ích chung ====================
 
 cad_service = CADService()
 
 
 async def com(fn, *args, **kwargs):
-    """在专用COM线程上执行调用（避免阻塞事件循环，且线程安全）"""
+    """Thực thi lệnh gọi trên luồng COM chuyên dụng (tránh chặn vòng lặp sự kiện và đảm bảo an toàn luồng)"""
     return await cad_service.controller.executor.run(fn, *args, **kwargs)
 
 
 def _resolve_color(color) -> Optional[int]:
-    """解析颜色参数为ACI索引：None=随层(ByLayer)；支持索引和中英文颜色名称"""
+    """Phân giải tham số màu sang chỉ số ACI: None=Theo lớp (ByLayer); hỗ trợ mã chỉ số và tên màu"""
     return cad_service.nlp_processor.color_to_index(color)
 
 
 async def _entity_result(entity, ok_message: str, fail_message: str) -> ToolResult:
-    """将单个COM实体包装为统一的工具结果
+    """Đóng gói một thực thể COM đơn lẻ thành kết quả công cụ thống nhất
 
-    句柄必须在COM线程上读取——实体由COM线程创建，
-    主线程直接访问未封送的COM接口指针属于跨套间调用，会失败甚至崩溃。
+    Handle bắt buộc phải được đọc trên luồng COM — thực thể do luồng COM tạo ra,
+    truy cập trực tiếp con trỏ giao diện COM chưa marshal từ luồng chính là lời gọi xuyên apartment, sẽ gây lỗi hoặc crash.
     """
     if entity is None:
-        return ToolResult(success=False, message=fail_message, error="CAD操作失败，详情见 cad_mcp.log")
+        return ToolResult(success=False, message=fail_message, error="Thao tác CAD thất bại, xem chi tiết trong cad_mcp.log")
     handle = await com(CADController._safe_attr, entity, "Handle")
     return ToolResult(success=True, message=ok_message,
                       entity_handles=[str(handle)] if handle else [])
 
 
 def _extract_handles_sync(entities: List[Any]) -> List[str]:
-    """在COM线程上批量提取实体句柄"""
+    """Trích xuất hàng loạt handle của các thực thể trên luồng COM"""
     return [str(h) for h in (CADController._safe_attr(e, "Handle") for e in entities) if h]
 
 
 async def _entities_result(entities: List[Any], ok_message: str, fail_message: str) -> ToolResult:
-    """将COM实体列表包装为统一的工具结果（句柄在COM线程上读取）"""
+    """Đóng gói danh sách thực thể COM thành kết quả công cụ thống nhất (handle được đọc trên luồng COM)"""
     if not entities:
         return ToolResult(success=False, message=fail_message)
     handles = await com(_extract_handles_sync, entities)
@@ -647,66 +647,66 @@ async def _entities_result(entities: List[Any], ok_message: str, fail_message: s
 
 
 async def _ensure_running(ctx: Context) -> bool:
-    """确保CAD已运行：未运行时先给进度提示再自动启动（首次启动可能较慢）
+    """Đảm bảo CAD đang chạy: nếu chưa chạy thì gửi thông báo tiến độ rồi tự động khởi động (lần đầu khởi động có thể chậm)
 
-    注意必须真正发起启动——此前只发提示不启动，导致screenshot等
-    不带自动启动逻辑的工具在CAD未运行时直接抛异常。
+    Lưu ý phải thực sự kích hoạt khởi động — trước đây chỉ gửi thông báo mà không khởi động, khiến các công cụ
+    không có logic tự khởi động như screenshot ném ngoại lệ trực tiếp khi CAD chưa chạy.
     """
     if cad_service.controller.is_running():
         return True
-    await ctx.info("CAD未运行，正在启动CAD（首次启动可能需要约20秒）...")
+    await ctx.info("CAD chưa chạy, đang khởi động CAD (lần đầu khởi động có thể mất khoảng 20 giây)...")
     if await com(cad_service.start_cad):
         return True
     detail = getattr(cad_service.controller, "last_connect_error", "")
-    await ctx.info("CAD自动启动失败，请检查CAD软件是否已安装并能正常启动"
-                   + (f"（{detail}）" if detail else ""))
+    await ctx.info("Tự động khởi động CAD thất bại, vui lòng kiểm tra xem phần mềm CAD đã được cài đặt và có thể khởi chạy bình thường chưa"
+                   + (f" ({detail})" if detail else ""))
     return False
 
 
 def _not_running_message() -> str:
-    """CAD未运行时的提示，带上最近一次连接失败的原因
+    """Thông báo khi CAD chưa chạy, kèm theo nguyên nhân lỗi kết nối gần nhất
 
-    原来所有失败都只显示"CAD未运行且自动启动失败"，用户看不到到底哪个ProgID
-    连不上、HRESULT是什么，只能自己去猜。现在把controller记录的原因带上。
+    Trước đây mọi lỗi đều chỉ hiển thị "CAD chưa chạy và tự động khởi động thất bại", người dùng không biết ProgID nào
+    không kết nối được hay mã HRESULT là gì, chỉ có thể tự đoán. Nay đính kèm thêm nguyên nhân mà controller ghi nhận.
     """
     detail = getattr(cad_service.controller, "last_connect_error", "")
-    base = "CAD未运行且自动启动失败"
-    return f"{base}：{detail}" if detail else base
+    base = "CAD chưa chạy và tự động khởi động thất bại"
+    return f"{base}: {detail}" if detail else base
 
 
-# ==================== MCP 服务器与工具注册 ====================
+# ==================== Máy chủ MCP và đăng ký công cụ ====================
 
 mcp = FastMCP(name=SERVER_NAME, instructions=SERVER_INSTRUCTIONS)
 
 
-# ---------- 基本绘图工具 ----------
+# ---------- Công cụ vẽ cơ bản ----------
 
 @mcp.tool()
 async def draw_line(ctx: Context, start_point: Point, end_point: Point,
                     layer: Optional[str] = None, color: Union[int, str, None] = None,
                     lineweight: Optional[float] = None) -> ToolResult:
-    """在CAD中绘制直线
+    """Vẽ đoạn thẳng trong CAD
 
-    color 支持CAD颜色索引(1-256)或中英文颜色名称（如"红色"、"red"），不指定则保持随层颜色。
+    color hỗ trợ mã màu CAD (1-256) hoặc tên màu (ví dụ: "đỏ", "red"), nếu không chỉ định sẽ giữ màu theo lớp.
     """
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_line, start_point, end_point, layer, _resolve_color(color), lineweight)
-    return await _entity_result(entity, "直线已绘制", "绘制直线失败")
+    return await _entity_result(entity, "Đã vẽ đoạn thẳng", "Vẽ đoạn thẳng thất bại")
 
 
 @mcp.tool()
 async def draw_circle(ctx: Context, center: Point, radius: PosFloat,
                       layer: Optional[str] = None, color: Union[int, str, None] = None,
                       lineweight: Optional[float] = None) -> ToolResult:
-    """在CAD中绘制圆
+    """Vẽ đường tròn trong CAD
 
-    color 支持CAD颜色索引(1-256)或中英文颜色名称，不指定则保持随层颜色。
+    color hỗ trợ mã màu CAD (1-256) hoặc tên màu, nếu không chỉ định sẽ giữ màu theo lớp.
     """
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_circle, center, radius, layer, _resolve_color(color), lineweight)
-    return await _entity_result(entity, "圆已绘制", "绘制圆失败")
+    return await _entity_result(entity, "Đã vẽ đường tròn", "Vẽ đường tròn thất bại")
 
 
 @mcp.tool()
@@ -714,12 +714,12 @@ async def draw_arc(ctx: Context, center: Point, radius: PosFloat,
                    start_angle: float, end_angle: float,
                    layer: Optional[str] = None, color: Union[int, str, None] = None,
                    lineweight: Optional[float] = None) -> ToolResult:
-    """在CAD中绘制弧（角度单位：度）"""
+    """Vẽ cung tròn trong CAD (đơn vị góc: độ)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_arc, center, radius, start_angle, end_angle,
                        layer, _resolve_color(color), lineweight)
-    return await _entity_result(entity, "圆弧已绘制", "绘制圆弧失败")
+    return await _entity_result(entity, "Đã vẽ cung tròn", "Vẽ cung tròn thất bại")
 
 
 @mcp.tool()
@@ -727,97 +727,97 @@ async def draw_ellipse(ctx: Context, center: Point, major_axis: PosFloat, minor_
                        rotation: float = 0, layer: Optional[str] = None,
                        color: Union[int, str, None] = None,
                        lineweight: Optional[float] = None) -> ToolResult:
-    """在CAD中绘制椭圆（rotation 为旋转角度，单位：度）"""
+    """Vẽ hình elip trong CAD (rotation là góc xoay, đơn vị: độ)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_ellipse, center, major_axis, minor_axis, rotation,
                        layer, _resolve_color(color), lineweight)
-    return await _entity_result(entity, "椭圆已绘制", "绘制椭圆失败")
+    return await _entity_result(entity, "Đã vẽ hình elip", "Vẽ hình elip thất bại")
 
 
 @mcp.tool()
 async def draw_polyline(ctx: Context, points: Points, closed: bool = False,
                         layer: Optional[str] = None, color: Union[int, str, None] = None,
                         lineweight: Optional[float] = None) -> ToolResult:
-    """在CAD中绘制多段线（closed=True 时闭合）"""
+    """Vẽ đường đa tuyến trong CAD (khép kín khi closed=True)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_polyline, points, closed, layer, _resolve_color(color), lineweight)
-    return await _entity_result(entity, "多段线已绘制", "绘制多段线失败")
+    return await _entity_result(entity, "Đã vẽ đường đa tuyến", "Vẽ đường đa tuyến thất bại")
 
 
 @mcp.tool()
 async def draw_rectangle(ctx: Context, corner1: Point, corner2: Point,
                          layer: Optional[str] = None, color: Union[int, str, None] = None,
                          lineweight: Optional[float] = None) -> ToolResult:
-    """在CAD中绘制矩形（由两个对角点确定）"""
+    """Vẽ hình chữ nhật trong CAD (xác định bởi hai góc đối diện)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_rectangle, corner1, corner2, layer, _resolve_color(color), lineweight)
-    return await _entity_result(entity, "矩形已绘制", "绘制矩形失败")
+    return await _entity_result(entity, "Đã vẽ hình chữ nhật", "Vẽ hình chữ nhật thất bại")
 
 
 @mcp.tool()
 async def draw_text(ctx: Context, position: Point, text: str, height: PosFloat = 2.5,
                     rotation: float = 0, layer: Optional[str] = None,
                     color: Union[int, str, None] = None) -> ToolResult:
-    """在CAD中添加单行文本"""
+    """Thêm văn bản một dòng trong CAD"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_text, position, text, height, rotation, layer, _resolve_color(color))
-    return await _entity_result(entity, "文本已添加", "添加文本失败")
+    return await _entity_result(entity, "Đã thêm văn bản", "Thêm văn bản thất bại")
 
 
 @mcp.tool()
 async def draw_hatch(ctx: Context, points: HatchPoints, pattern_name: str = "SOLID",
                      scale: PosFloat = 1.0, layer: Optional[str] = None,
                      color: Union[int, str, None] = None) -> ToolResult:
-    """在CAD中绘制填充（points 为闭合边界点集，至少3个点）
+    """Vẽ tô mặt cắt trong CAD (points là tập hợp điểm đường biên khép kín, ít nhất 3 điểm)
 
-    pattern_name 为填充图案名称，默认 SOLID（实体填充）。
+    pattern_name là tên mẫu tô mặt cắt, mặc định SOLID (tô đặc).
     """
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.draw_hatch, points, pattern_name, scale, layer, _resolve_color(color))
-    return await _entity_result(entity, "填充已绘制", "绘制填充失败")
+    return await _entity_result(entity, "Đã vẽ tô mặt cắt", "Vẽ tô mặt cắt thất bại")
 
 
 @mcp.tool()
 async def add_dimension(ctx: Context, start_point: Point, end_point: Point,
                         text_position: Optional[Point] = None, textheight: PosFloat = 5,
                         layer: Optional[str] = None, color: Union[int, str, None] = None) -> ToolResult:
-    """在CAD中添加线性标注（text_position 不指定时自动放在中点上方）"""
+    """Thêm ghi kích thước tuyến tính trong CAD (nếu không chỉ định text_position sẽ tự động đặt phía trên trung điểm)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entity = await com(cad_service.add_dimension, start_point, end_point, text_position, textheight,
                        layer, _resolve_color(color))
-    return await _entity_result(entity, "标注已添加", "添加标注失败")
+    return await _entity_result(entity, "Đã thêm ghi kích thước", "Thêm ghi kích thước thất bại")
 
 
-# ---------- 查询工具（闭合AI反馈回路：AI能看到图纸实际内容） ----------
+# ---------- Công cụ truy vấn (khép kín vòng phản hồi AI: AI nhìn thấy nội dung thực tế của bản vẽ) ----------
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_layers(ctx: Context) -> ListLayersResult:
-    """列出当前图纸的所有图层（名称、颜色、冻结/锁定/开关状态、是否当前层）"""
+    """Liệt kê tất cả các lớp của bản vẽ hiện tại (tên, màu, trạng thái đóng băng/khóa/bật tắt, có phải lớp hiện tại không)"""
     if not await _ensure_running(ctx):
         return ListLayersResult(success=False, message=_not_running_message())
     layers = await com(cad_service.controller.list_layers)
-    return ListLayersResult(success=True, message=f"共{len(layers)}个图层", layers=layers)
+    return ListLayersResult(success=True, message=f"Tổng cộng {len(layers)} lớp", layers=layers)
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_entities(ctx: Context, entity_type: Optional[str] = None,
                         limit: int = 50) -> ListEntitiesResult:
-    """列出模型空间中的实体（实时查询，与CAD文档保持同步）
+    """Liệt kê các thực thể trong không gian mô hình (truy vấn thời gian thực, đồng bộ với tài liệu CAD)
 
-    返回实体的句柄(handle)，可用于编辑类工具与 get_entity_properties。
-    entity_type 可按类型过滤（如 line/circle/arc/text）；limit 控制返回数量。
+    Trả về handle của thực thể, dùng cho các công cụ chỉnh sửa và get_entity_properties.
+    entity_type cho phép lọc theo loại (như line/circle/arc/text); limit kiểm soát số lượng trả về.
     """
     if not await _ensure_running(ctx):
         return ListEntitiesResult(success=False, message=_not_running_message())
     result = await com(cad_service.controller.list_entities, entity_type, limit)
     return ListEntitiesResult(success=True,
-                              message=f"模型空间共{result['total']}个实体，返回{len(result['entities'])}个",
+                              message=f"Không gian mô hình có tổng cộng {result['total']} thực thể, trả về {len(result['entities'])} thực thể",
                               total=result["total"],
                               returned=len(result["entities"]),
                               entities=result["entities"])
@@ -825,273 +825,273 @@ async def list_entities(ctx: Context, entity_type: Optional[str] = None,
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def get_entity_properties(ctx: Context, handle: str) -> EntityPropertiesResult:
-    """按句柄查询实体详细属性（几何信息随实体类型而异：坐标/半径/文本内容等）"""
+    """Tra cứu thuộc tính chi tiết của thực thể theo handle (thông tin hình học tùy thuộc loại thực thể: tọa độ/bán kính/nội dung văn bản...)"""
     if not await _ensure_running(ctx):
         return EntityPropertiesResult(success=False, message=_not_running_message())
     try:
         props = await com(cad_service.controller.get_entity_properties, handle)
-        return EntityPropertiesResult(success=True, message="查询成功", **props)
+        return EntityPropertiesResult(success=True, message="Truy vấn thành công", **props)
     except Exception as e:
-        return EntityPropertiesResult(success=False, message=f"查询句柄 {handle} 失败", error=str(e))
+        return EntityPropertiesResult(success=False, message=f"Truy vấn handle {handle} thất bại", error=str(e))
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def screenshot(ctx: Context):
-    """截取CAD主窗口画面并返回PNG预览图（用于确认绘图效果）"""
+    """Chụp màn hình cửa sổ chính CAD và trả về ảnh xem trước PNG (dùng để kiểm tra kết quả vẽ)"""
     if not await _ensure_running(ctx):
-        return [TextContent(type="text", text=f"{_not_running_message()}，无法截图")]
+        return [TextContent(type="text", text=f"{_not_running_message()}, không thể chụp ảnh màn hình")]
     png_bytes = await com(cad_service.controller.screenshot)
-    # 编码为base64返回图片内容块
+    # Mã hóa sang base64 và trả về khối nội dung hình ảnh
     b64 = base64.b64encode(png_bytes).decode("utf-8")
     return [
         ImageContent(type="image", data=b64, mimeType="image/png"),
-        TextContent(type="text", text="CAD窗口截图（PNG）"),
+        TextContent(type="text", text="Ảnh chụp màn hình cửa sổ CAD (PNG)"),
     ]
 
 
-# ---------- 编辑工具（通过句柄操作已有实体） ----------
+# ---------- Công cụ chỉnh sửa (thao tác thực thể đã có thông qua handle) ----------
 
 @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 async def erase_entity(ctx: Context, handle: str) -> ToolResult:
-    """删除指定句柄的实体"""
+    """Xóa thực thể theo handle được chỉ định"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.erase_entity, handle)
-    return ToolResult(success=ok, message="实体已删除" if ok else f"删除句柄 {handle} 失败")
+    return ToolResult(success=ok, message="Đã xóa thực thể" if ok else f"Xóa handle {handle} thất bại")
 
 
 @mcp.tool()
 async def move_entity(ctx: Context, handle: str, displacement: Point) -> ToolResult:
-    """移动实体（displacement 为位移向量 [dx, dy, dz]）"""
+    """Di chuyển thực thể (displacement là vectơ dịch chuyển [dx, dy, dz])"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.move_entity, handle, displacement)
-    return ToolResult(success=ok, message="实体已移动" if ok else f"移动句柄 {handle} 失败")
+    return ToolResult(success=ok, message="Đã di chuyển thực thể" if ok else f"Di chuyển handle {handle} thất bại")
 
 
 @mcp.tool()
 async def rotate_entity(ctx: Context, handle: str, base_point: Point, angle_degrees: float) -> ToolResult:
-    """绕基点旋转实体（角度单位：度，逆时针为正）"""
+    """Xoay thực thể quanh điểm gốc (đơn vị góc: độ, ngược chiều kim đồng hồ là dương)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.rotate_entity, handle, base_point, angle_degrees)
-    return ToolResult(success=ok, message="实体已旋转" if ok else f"旋转句柄 {handle} 失败")
+    return ToolResult(success=ok, message="Đã xoay thực thể" if ok else f"Xoay handle {handle} thất bại")
 
 
 @mcp.tool()
 async def scale_entity(ctx: Context, handle: str, base_point: Point, scale_factor: PosFloat) -> ToolResult:
-    """绕基点缩放实体（scale_factor>1 放大，<1 缩小）"""
+    """Phóng to/thu nhỏ thực thể quanh điểm gốc (scale_factor>1 để phóng to, <1 để thu nhỏ)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.scale_entity, handle, base_point, scale_factor)
-    return ToolResult(success=ok, message="实体已缩放" if ok else f"缩放句柄 {handle} 失败")
+    return ToolResult(success=ok, message="Đã thay đổi tỉ lệ thực thể" if ok else f"Thay đổi tỉ lệ handle {handle} thất bại")
 
 
 @mcp.tool()
 async def copy_entity(ctx: Context, handle: str, displacement: Point) -> ToolResult:
-    """复制实体并平移指定位移，返回新实体句柄"""
+    """Sao chép thực thể và tịnh tiến theo vectơ dịch chuyển chỉ định, trả về handle thực thể mới"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     copy = await com(cad_service.controller.copy_entity, handle, displacement)
-    return await _entity_result(copy, "实体已复制", f"复制句柄 {handle} 失败")
+    return await _entity_result(copy, "Đã sao chép thực thể", f"Sao chép handle {handle} thất bại")
 
 
 @mcp.tool()
 async def mirror_entity(ctx: Context, handle: str, point1: Point, point2: Point) -> ToolResult:
-    """沿两点确定的镜像轴镜像实体（保留原实体），返回新实体句柄"""
+    """Lấy đối xứng thực thể qua trục đối xứng xác định bởi hai điểm (giữ lại thực thể gốc), trả về handle thực thể mới"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     mirrored = await com(cad_service.controller.mirror_entity, handle, point1, point2)
-    return await _entity_result(mirrored, "实体已镜像", f"镜像句柄 {handle} 失败")
+    return await _entity_result(mirrored, "Đã lấy đối xứng thực thể", f"Lấy đối xứng handle {handle} thất bại")
 
 
 @mcp.tool()
 async def offset_entity(ctx: Context, handle: str, distance: float) -> ToolResult:
-    """偏移实体（正负值决定偏移方向），返回新实体句柄"""
+    """Tạo đường song song (offset) cho thực thể (giá trị dương/âm quyết định hướng offset), trả về handle thực thể mới"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entities = await com(cad_service.controller.offset_entity, handle, distance)
-    return await _entities_result(entities, "实体已偏移", f"偏移句柄 {handle} 失败")
+    return await _entities_result(entities, "Đã offset thực thể", f"Offset handle {handle} thất bại")
 
 
 @mcp.tool()
 async def array_linear_entity(ctx: Context, handle: str, count: ArrayCount, displacement: Point) -> ToolResult:
-    """矩形阵列：沿位移向量方向复制 count-1 份（含原实体共 count 个）"""
+    """Mảng tuyến tính: sao chép count-1 bản dọc theo vectơ dịch chuyển (tổng cộng count phần tử kể cả thực thể gốc)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entities = await com(cad_service.controller.array_linear_entity, handle, count, displacement)
-    return await _entities_result(entities, f"已完成{count}个的线性阵列", f"阵列句柄 {handle} 失败")
+    return await _entities_result(entities, f"Đã hoàn tất mảng tuyến tính gồm {count} phần tử", f"Tạo mảng cho handle {handle} thất bại")
 
 
 @mcp.tool()
 async def array_polar_entity(ctx: Context, handle: str, count: ArrayCount, center: Point,
                              total_angle_degrees: float = 360.0) -> ToolResult:
-    """环形阵列：绕中心点在 total_angle 角度范围内复制 count-1 份"""
+    """Mảng tròn: sao chép count-1 bản quanh điểm tâm trong phạm vi góc total_angle"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     entities = await com(cad_service.controller.array_polar_entity, handle, count, center, total_angle_degrees)
-    return await _entities_result(entities, f"已完成{count}个的环形阵列", f"阵列句柄 {handle} 失败")
+    return await _entities_result(entities, f"Đã hoàn tất mảng tròn gồm {count} phần tử", f"Tạo mảng cho handle {handle} thất bại")
 
 
 @mcp.tool()
 async def undo(ctx: Context) -> ToolResult:
-    """撤销上一步操作"""
+    """Hoàn tác thao tác trước đó"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.undo)
-    return ToolResult(success=ok, message="已撤销" if ok else "撤销失败")
+    return ToolResult(success=ok, message="Đã hoàn tác" if ok else "Hoàn tác thất bại")
 
 
 @mcp.tool()
 async def redo(ctx: Context) -> ToolResult:
-    """重做被撤销的操作"""
+    """Làm lại thao tác vừa hoàn tác"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.redo)
-    return ToolResult(success=ok, message="已重做" if ok else "重做失败")
+    return ToolResult(success=ok, message="Đã làm lại" if ok else "Làm lại thất bại")
 
 
-# ---------- 图层管理 ----------
+# ---------- Quản lý lớp ----------
 
 @mcp.tool()
 async def create_layer(ctx: Context, layer_name: str) -> ToolResult:
-    """创建新图层并设为当前图层（若已存在则直接激活）"""
+    """Tạo lớp mới và đặt làm lớp hiện tại (nếu đã tồn tại thì kích hoạt trực tiếp)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.create_layer, layer_name)
     if ok:
         cad_service.drawing_state["current_layer"] = layer_name
-    return ToolResult(success=ok, message=f"图层 {layer_name} 已创建并设为当前层" if ok else f"创建图层 {layer_name} 失败")
+    return ToolResult(success=ok, message=f"Đã tạo lớp {layer_name} và đặt làm lớp hiện tại" if ok else f"Tạo lớp {layer_name} thất bại")
 
 
 @mcp.tool()
 async def set_current_layer(ctx: Context, layer_name: str) -> ToolResult:
-    """切换当前图层（图层必须已存在）"""
+    """Chuyển lớp hiện tại (lớp phải đã tồn tại)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.set_current_layer, layer_name)
     if ok:
         cad_service.drawing_state["current_layer"] = layer_name
-    return ToolResult(success=ok, message=f"当前图层已切换为 {layer_name}" if ok else f"图层 {layer_name} 不存在或切换失败")
+    return ToolResult(success=ok, message=f"Đã chuyển lớp hiện tại sang {layer_name}" if ok else f"Lớp {layer_name} không tồn tại hoặc chuyển đổi thất bại")
 
 
-# ---------- 图纸管理 ----------
+# ---------- Quản lý bản vẽ ----------
 
 @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 async def new_drawing(ctx: Context) -> ToolResult:
-    """新建图纸文档"""
+    """Tạo tài liệu bản vẽ mới"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.new_drawing)
     if ok:
-        # 会话绘图记录归属于旧文档，切换文档后清空
+        # Lịch sử vẽ của phiên thuộc về tài liệu cũ, xóa sạch sau khi chuyển tài liệu
         cad_service.drawing_state["entities"] = []
-    return ToolResult(success=ok, message="新文档已创建" if ok else "新建文档失败")
+    return ToolResult(success=ok, message="Đã tạo tài liệu mới" if ok else "Tạo tài liệu mới thất bại")
 
 
 @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 async def open_drawing(ctx: Context, file_path: str) -> ToolResult:
-    """打开已有图纸文件（DWG/DXF等）"""
+    """Mở tệp bản vẽ đã có (DWG/DXF, v.v.)"""
     if cad_service.controller.app is None and not await com(cad_service.controller.start_cad):
-        return ToolResult(success=False, message="CAD未运行且启动失败")
+        return ToolResult(success=False, message="CAD chưa chạy và khởi động thất bại")
     try:
         ok = await com(cad_service.controller.open_drawing, file_path)
     except FileNotFoundError as e:
         return ToolResult(success=False, message=str(e))
     if ok:
         cad_service.drawing_state["entities"] = []
-    return ToolResult(success=ok, message=f"文档已打开: {file_path}" if ok else f"打开文档失败: {file_path}")
+    return ToolResult(success=ok, message=f"Đã mở tài liệu: {file_path}" if ok else f"Mở tài liệu thất bại: {file_path}")
 
 
 @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 async def close_drawing(ctx: Context, save: bool = False) -> ToolResult:
-    """关闭当前文档（save=False 时不保存直接关闭）"""
+    """Đóng tài liệu hiện tại (khi save=False sẽ đóng trực tiếp không lưu)"""
     if not cad_service.controller.is_running():
-        return ToolResult(success=False, message="CAD未运行")
+        return ToolResult(success=False, message="CAD chưa chạy")
     ok = await com(cad_service.controller.close_drawing, save)
     if ok:
         cad_service.drawing_state["entities"] = []
-    return ToolResult(success=ok, message="文档已关闭" if ok else "关闭文档失败")
+    return ToolResult(success=ok, message="Đã đóng tài liệu" if ok else "Đóng tài liệu thất bại")
 
 
 @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 async def save_drawing(ctx: Context, file_path: str) -> ToolResult:
-    """保存当前图纸（按扩展名自动选择 DWG/DXF 格式；已存在的文件将被覆盖）"""
-    # 这里不能自动启动 CAD：start_cad() 会新建一张空白的 Drawing1.dwg，
-    # 随后的 SaveAs 会把用户路径上已有的图纸直接覆盖成空白图（原内容不可恢复）。
-    # 因此这里只接受"已连接的 CAD"，未连接时安全失败，不碰用户文件。
+    """Lưu bản vẽ hiện tại (tự động chọn định dạng DWG/DXF theo phần mở rộng; tệp đã tồn tại sẽ bị ghi đè)"""
+    # Không được tự động khởi động CAD tại đây: start_cad() sẽ tạo một Drawing1.dwg trống,
+    # sau đó SaveAs sẽ ghi đè bản vẽ có sẵn tại đường dẫn người dùng bằng bản vẽ trống (không thể khôi phục nội dung gốc).
+    # Vì vậy ở đây chỉ chấp nhận "CAD đã kết nối", nếu chưa kết nối thì báo lỗi an toàn, không chạm vào tệp của người dùng.
     if not cad_service.controller.is_running():
-        return ToolResult(success=False, message="CAD未运行，请先调用 open_drawing 打开要保存的图纸")
-    await ctx.info(f"正在保存图纸到 {file_path} ...")
+        return ToolResult(success=False, message="CAD chưa chạy, vui lòng gọi open_drawing để mở bản vẽ cần lưu trước")
+    await ctx.info(f"Đang lưu bản vẽ tới {file_path} ...")
     try:
         ok = await com(cad_service.save_drawing, file_path)
     except ValueError as e:
-        # 目标路径被其他打开的图纸占用：提前快速失败并给出可操作的提示
-        return ToolResult(success=False, message=f"保存失败: {e}", error=str(e))
-    return ToolResult(success=ok, message=f"图纸已保存到 {file_path}" if ok else f"保存图纸到 {file_path} 失败")
+        # Đường dẫn đích đang bị một bản vẽ khác đang mở chiếm dụng: báo lỗi nhanh sớm kèm hướng dẫn xử lý
+        return ToolResult(success=False, message=f"Lưu thất bại: {e}", error=str(e))
+    return ToolResult(success=ok, message=f"Đã lưu bản vẽ tới {file_path}" if ok else f"Lưu bản vẽ tới {file_path} thất bại")
 
 
 @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
 async def send_command(ctx: Context, command: str) -> ToolResult:
-    """直通CAD命令行执行任意命令（功能逃生舱）
+    """Gửi trực tiếp lệnh bất kỳ tới dòng lệnh CAD (cửa thoát chức năng)
 
-    示例："_.ZOOM E"（缩放全图）、"_.ERASE" 配合选择集等。
-    建议命令以 "_." 前缀强制英文命令名以兼容中文版CAD。
+    Ví dụ: "_.ZOOM E" (thu phóng toàn bộ bản vẽ), "_.ERASE" kết hợp tập chọn, v.v.
+    Khuyến nghị thêm tiền tố "_." trước lệnh để ép dùng tên lệnh tiếng Anh, tương thích với các phiên bản CAD bản địa hóa.
     """
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     ok = await com(cad_service.controller.send_command, command)
-    return ToolResult(success=ok, message=f"命令已提交: {command}" if ok else "命令执行失败")
+    return ToolResult(success=ok, message=f"Đã gửi lệnh: {command}" if ok else "Thực thi lệnh thất bại")
 
 
-# ---------- 图块操作 ----------
+# ---------- Thao tác với khối (Block) ----------
 
 @mcp.tool()
 async def create_block(ctx: Context, block_name: str, base_point: Optional[Point] = None) -> ToolResult:
-    """创建图块定义（若同名图块已存在则直接返回）
+    """Tạo định nghĩa khối (nếu khối cùng tên đã tồn tại thì trả về trực tiếp)
 
-    注意：图块内部实体可通过 send_command 执行 BEDIT 等命令编辑。
+    Lưu ý: các thực thể bên trong khối có thể chỉnh sửa thông qua send_command với lệnh BEDIT, v.v.
     """
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     block = await com(cad_service.controller.create_block, block_name, base_point)
-    return await _entity_result(block, f"图块 {block_name} 已就绪", f"创建图块 {block_name} 失败")
+    return await _entity_result(block, f"Khối {block_name} đã sẵn sàng", f"Tạo khối {block_name} thất bại")
 
 
 @mcp.tool()
 async def insert_block(ctx: Context, block_name: str, position: Point,
                        x_scale: float = 1.0, y_scale: float = 1.0, z_scale: float = 1.0,
                        rotation_degrees: float = 0.0) -> ToolResult:
-    """在模型空间插入图块引用（返回图块引用实体的句柄）"""
+    """Chèn tham chiếu khối vào không gian mô hình (trả về handle của thực thể tham chiếu khối)"""
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message())
     block_ref = await com(cad_service.controller.insert_block, block_name, position,
                           x_scale, y_scale, z_scale, rotation_degrees)
-    return await _entity_result(block_ref, f"图块 {block_name} 已插入", f"插入图块 {block_name} 失败（请确认图块已定义）")
+    return await _entity_result(block_ref, f"Đã chèn khối {block_name}", f"Chèn khối {block_name} thất bại (vui lòng kiểm tra xem khối đã được định nghĩa chưa)")
 
 
 @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
 async def list_blocks(ctx: Context) -> ListBlocksResult:
-    """列出当前图纸中的用户图块定义"""
+    """Liệt kê các định nghĩa khối của người dùng trong bản vẽ hiện tại"""
     if not await _ensure_running(ctx):
         return ListBlocksResult(success=False, message=_not_running_message())
     blocks = await com(cad_service.controller.list_blocks)
-    return ListBlocksResult(success=True, message=f"共{len(blocks)}个图块", blocks=blocks)
+    return ListBlocksResult(success=True, message=f"Tổng cộng {len(blocks)} khối", blocks=blocks)
 
 
-# ---------- 遗留接口 ----------
+# ---------- Giao diện cũ (Legacy) ----------
 
 @mcp.tool()
 async def process_command(ctx: Context, command: str) -> ToolResult:
-    """处理自然语言命令并转换为CAD操作（遗留接口）
+    """Xử lý lệnh ngôn ngữ tự nhiên và chuyển thành thao tác CAD (giao diện cũ)
 
-    推荐优先直接调用结构化绘图工具（draw_line/draw_circle等），
-    仅在用户明确要求自然语言入口时使用本工具。
+    Khuyến nghị ưu tiên gọi trực tiếp các công cụ vẽ có cấu trúc (draw_line/draw_circle, v.v.),
+    chỉ sử dụng công cụ này khi người dùng yêu cầu rõ ràng đầu vào bằng ngôn ngữ tự nhiên.
     """
     if not await _ensure_running(ctx):
         return ToolResult(success=False, message=_not_running_message(), error=_not_running_message())
     result = await com(cad_service.process_command, command)
-    # 兼容旧返回结构（entity_id）并映射到统一结果
+    # Tương thích cấu trúc trả về cũ (entity_id) và ánh xạ sang kết quả thống nhất
     handles = []
     if result.get("entity_id"):
         handles = [str(result["entity_id"])]
@@ -1103,14 +1103,14 @@ async def process_command(ctx: Context, command: str) -> ToolResult:
     )
 
 
-# ---------- 资源与提示词 ----------
+# ---------- Tài nguyên và lời nhắc ----------
 
-@mcp.resource("drawing://current", name="当前CAD图纸",
-              description="当前CAD图纸的状态（会话绘图记录 + 来自CAD文档的实时统计）",
+@mcp.resource("drawing://current", name="Bản vẽ CAD hiện tại",
+              description="Trạng thái bản vẽ CAD hiện tại (lịch sử vẽ của phiên + thống kê thời gian thực từ tài liệu CAD)",
               mime_type="application/json")
 async def current_drawing() -> str:
-    """当前CAD图纸状态资源"""
-    # 会话记录 + 实时统计，让客户端既看到本会话画了什么，也看到文档真实状态
+    """Tài nguyên trạng thái bản vẽ CAD hiện tại"""
+    # Lịch sử phiên + thống kê thời gian thực, giúp client vừa thấy những gì phiên này đã vẽ vừa thấy trạng thái thật của tài liệu
     stats = await com(cad_service.controller.get_drawing_stats)
     payload = {
         "session": cad_service.drawing_state,
@@ -1119,41 +1119,41 @@ async def current_drawing() -> str:
     return json.dumps(payload, ensure_ascii=False, default=str)
 
 
-@mcp.prompt(name="cad-assistant", description="一个用于通过自然语言控制CAD的助手")
+@mcp.prompt(name="cad-assistant", description="Trợ lý điều khiển CAD bằng ngôn ngữ tự nhiên")
 def cad_assistant() -> str:
-    """CAD助手提示模板"""
+    """Mẫu lời nhắc của trợ lý CAD"""
     return PROMPT_TEMPLATE.strip()
 
 
-# ==================== 主入口 ====================
+# ==================== Điểm vào chính ====================
 
 def _stdio_channel_problem():
-    """返回 stdio 通道不可用的原因；正常由客户端拉起时返回 None
+    """Trả về lý do kênh stdio không khả dụng; trả về None khi được client khởi chạy bình thường
 
-    MCP 的 stdio 传输要求 stdin/stdout 是客户端拉起的真实管道。
-    在 IDLE 里按 F5、或在终端里手动跑，stdout 都不是管道，客户端根本连不上，
-    这时给出一句能看懂的提示，避免用户对着"没反应"猜。
+    Chế độ truyền tải stdio của MCP yêu cầu stdin/stdout phải là đường ống (pipe) thật do client tạo ra.
+    Khi nhấn F5 trong IDLE hoặc chạy thủ công trong terminal, stdout không phải pipe nên client không thể kết nối,
+    khi đó đưa ra thông báo dễ hiểu để tránh người dùng phải đoán vì sao "không có phản hồi".
     """
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.fileno()
         except Exception:
-            return "当前 stdout/stderr 不是真实管道（可能是在 IDLE 等嵌入式解释器里直接运行）"
+            return "stdout/stderr hiện tại không phải đường ống (pipe) thật (có thể đang chạy trực tiếp trong trình thông dịch nhúng như IDLE)"
     try:
         if sys.stdout.isatty():
-            return "当前 stdout 是终端窗口（MCP 客户端需要用管道跟本进程通信）"
+            return "stdout hiện tại là cửa sổ terminal (MCP client cần giao tiếp với tiến trình này qua đường ống pipe)"
     except Exception:
         pass
     return None
 
 
 def main():
-    """主入口：支持 stdio（默认）与 streamable-http 两种传输方式"""
-    parser = argparse.ArgumentParser(description="CAD MCP 服务器")
+    """Điểm vào chính: hỗ trợ hai phương thức truyền tải là stdio (mặc định) và streamable-http"""
+    parser = argparse.ArgumentParser(description="Máy chủ CAD MCP")
     parser.add_argument("--transport", choices=["stdio", "streamable-http"], default=None,
-                        help="传输方式（默认读取config.json，未配置则为stdio）")
-    parser.add_argument("--host", default=None, help="Streamable HTTP 监听地址")
-    parser.add_argument("--port", type=int, default=None, help="Streamable HTTP 监听端口")
+                        help="Phương thức truyền tải (mặc định đọc từ config.json, nếu chưa cấu hình thì dùng stdio)")
+    parser.add_argument("--host", default=None, help="Địa chỉ lắng nghe Streamable HTTP")
+    parser.add_argument("--port", type=int, default=None, help="Cổng lắng nghe Streamable HTTP")
     args = parser.parse_args()
 
     server_cfg = config.get("server", {})
@@ -1162,18 +1162,18 @@ def main():
     port = args.port or int(server_cfg.get("port", 8000))
 
     if transport == "streamable-http":
-        # Streamable HTTP 传输：支持远程/多客户端共享同一CAD实例
+        # Truyền tải Streamable HTTP: hỗ trợ từ xa / nhiều client dùng chung một phiên bản CAD
         mcp.settings.host = host
         mcp.settings.port = port
-        logger.info(f"服务器以 Streamable HTTP 传输运行: http://{host}:{port}/mcp")
+        logger.info(f"Máy chủ đang chạy với truyền tải Streamable HTTP: http://{host}:{port}/mcp")
         mcp.run(transport="streamable-http")
     else:
-        logger.info("服务器以 stdio 传输运行")
+        logger.info("Máy chủ đang chạy với truyền tải stdio")
         problem = _stdio_channel_problem()
         if problem:
-            logger.warning(f"提示：{problem}，MCP 客户端无法连上本进程；"
-                           "请让客户端按配置自动拉起本进程，或改用 --transport streamable-http")
-        mcp.run()  # 默认 stdio
+            logger.warning(f"Lưu ý: {problem}, MCP client không thể kết nối tới tiến trình này; "
+                           "vui lòng để client tự động khởi chạy tiến trình này theo cấu hình, hoặc chuyển sang dùng --transport streamable-http")
+        mcp.run()  # Mặc định stdio
 
 
 if __name__ == "__main__":
