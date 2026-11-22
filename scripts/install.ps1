@@ -4,27 +4,21 @@
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
+$CadMcpDir = Join-Path $RepoRoot "cad-mcp"
 $GeminiDir = Join-Path $env:USERPROFILE ".gemini"
-$CadMcpDir = Join-Path $GeminiDir "cad-mcp"
 $ConfigDir = Join-Path $GeminiDir "config"
 $McpConfigPath = Join-Path $ConfigDir "mcp_config.json"
 $SkillTargetDir = Join-Path $GeminiDir "antigravity\skills\autocad-swarm"
 
-Write-Host "=== 1. Checking prerequisites (Git & Python) ===" -ForegroundColor Cyan
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    throw "Git not found. Please install Git from https://git-scm.com/download/win"
-}
+Write-Host "=== 1. Checking prerequisites (Python >= 3.10) ===" -ForegroundColor Cyan
 if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    throw "Python not found. Please install Python >= 3.10 from https://www.python.org/downloads/"
+    throw "Python not found. Please install Python >= 3.10 from https://www.python.org/downloads/ (check 'Add Python to PATH')."
+}
+if (-not (Test-Path (Join-Path $CadMcpDir "src\server.py"))) {
+    throw "Bundled cad-mcp directory not found at $CadMcpDir"
 }
 
-Write-Host "=== 2. Installing CAD-MCP into $CadMcpDir ===" -ForegroundColor Cyan
-if (-not (Test-Path $CadMcpDir)) {
-    git clone https://github.com/daobataotie/CAD-MCP.git $CadMcpDir
-} else {
-    Write-Host "CAD-MCP directory already exists, skipping clone." -ForegroundColor Yellow
-}
-
+Write-Host "=== 2. Setting up CAD-MCP virtual environment in $CadMcpDir ===" -ForegroundColor Cyan
 $VenvDir = Join-Path $CadMcpDir ".venv"
 $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
 $ServerPy = Join-Path $CadMcpDir "src\server.py"
